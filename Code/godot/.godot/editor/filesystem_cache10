@@ -1,0 +1,16 @@
+63f7b34db8d8cdea90c76aacccf841ec
+::res://::1776504450
+AgentState.gd::GDScript::7100565159224994110::1776253616::0::1::::AgentState<>Resource<><>0<>0<><>::
+godot_client_check.log::TextFile::-1::1776256355::0::1::::<><><>0<>0<><>::
+godot_cli_check.log::TextFile::-1::1776256355::0::1::::<><><>0<>0<><>::
+godot_debug_console_check.log::TextFile::-1::1776256355::0::1::::<><><>0<>0<><>::
+godot_import_check.log::TextFile::-1::1776257920::0::1::::<><><>0<>0<><>::
+godot_scene_check.log::TextFile::-1::1776504389::0::1::::<><><>0<>0<><>::
+ThoughtClient.gd::GDScript::5411451803266163948::1776262900::0::1::::ThoughtClient<>Node<><>0<>0<><>::
+ThoughtResult.gd::GDScript::4732533210147497066::1776230422::0::1::::ThoughtResult<>Resource<><>0<>0<><>::
+::res://scenes/::1776265931
+debug_console.tscn::PackedScene::-1::1776257379::0::1::::<><><>0<>0<><>::res://scripts/DebugConsole.gd
+village_scene.tscn::PackedScene::-1::1776504378::0::1::::<><><>0<>0<><>::res://scripts/VillageScene.gd
+::res://scripts/::1776265887
+DebugConsole.gd::GDScript::535435089778487135::1776257365::0::1::::<>Control<><>0<>0<><>::
+VillageScene.gd::GDScript::5804738612343767711::1776504368::0::1::::<>Node2D<><>0<>0<><>::

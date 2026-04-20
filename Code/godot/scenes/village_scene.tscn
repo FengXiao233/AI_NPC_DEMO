@@ -1,0 +1,297 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/VillageScene.gd" id="1_village"]
+
+[node name="VillageScene" type="Node2D"]
+script = ExtResource("1_village")
+
+[node name="Ground" type="ColorRect" parent="."]
+unique_name_in_owner = true
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0.188235, 0.294118, 0.196078, 1)
+
+[node name="Road" type="ColorRect" parent="."]
+offset_left = 80.0
+offset_top = 320.0
+offset_right = 1200.0
+offset_bottom = 410.0
+color = Color(0.329412, 0.329412, 0.329412, 1)
+
+[node name="MarketZone" type="ColorRect" parent="."]
+offset_left = 520.0
+offset_top = 210.0
+offset_right = 760.0
+offset_bottom = 510.0
+color = Color(0.247059, 0.411765, 0.45098, 1)
+
+[node name="GateZone" type="ColorRect" parent="."]
+offset_left = 150.0
+offset_top = 220.0
+offset_right = 370.0
+offset_bottom = 500.0
+color = Color(0.396078, 0.360784, 0.286275, 1)
+
+[node name="ForestZone" type="ColorRect" parent="."]
+offset_left = 900.0
+offset_top = 185.0
+offset_right = 1140.0
+offset_bottom = 525.0
+color = Color(0.137255, 0.360784, 0.211765, 1)
+
+[node name="InnZone" type="ColorRect" parent="."]
+offset_left = 500.0
+offset_top = 540.0
+offset_right = 780.0
+offset_bottom = 680.0
+color = Color(0.329412, 0.243137, 0.184314, 1)
+
+[node name="GateLabel" type="Label" parent="."]
+offset_left = 200.0
+offset_top = 235.0
+offset_right = 340.0
+offset_bottom = 260.0
+text = "村口"
+
+[node name="MarketLabel" type="Label" parent="."]
+offset_left = 610.0
+offset_top = 225.0
+offset_right = 710.0
+offset_bottom = 250.0
+text = "市场"
+
+[node name="ForestLabel" type="Label" parent="."]
+offset_left = 970.0
+offset_top = 205.0
+offset_right = 1100.0
+offset_bottom = 230.0
+text = "森林边缘"
+
+[node name="InnLabel" type="Label" parent="."]
+offset_left = 612.0
+offset_top = 548.0
+offset_right = 712.0
+offset_bottom = 573.0
+text = "旅店"
+
+[node name="Player" type="Node2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(640, 500)
+
+[node name="Body" type="Polygon2D" parent="Player"]
+color = Color(0.14902, 0.431373, 0.901961, 1)
+polygon = PackedVector2Array(0, -22, 18, 12, -18, 12)
+
+[node name="Label" type="Label" parent="Player"]
+offset_left = -24.0
+offset_top = 18.0
+offset_right = 42.0
+offset_bottom = 43.0
+text = "玩家"
+
+[node name="Guard" type="Node2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(260, 360)
+
+[node name="Body" type="Polygon2D" parent="Guard"]
+color = Color(0.85098, 0.152941, 0.152941, 1)
+polygon = PackedVector2Array(0, -24, 20, 14, -20, 14)
+
+[node name="Label" type="Label" parent="Guard"]
+offset_left = -38.0
+offset_top = 18.0
+offset_right = 60.0
+offset_bottom = 43.0
+text = "守卫"
+
+[node name="Merchant" type="Node2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(640, 360)
+
+[node name="Body" type="Polygon2D" parent="Merchant"]
+color = Color(0.92549, 0.752941, 0.145098, 1)
+polygon = PackedVector2Array(0, -22, 18, 12, -18, 12)
+
+[node name="Label" type="Label" parent="Merchant"]
+offset_left = -48.0
+offset_top = 18.0
+offset_right = 75.0
+offset_bottom = 43.0
+text = "商人"
+
+[node name="Hunter" type="Node2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(1010, 360)
+
+[node name="Body" type="Polygon2D" parent="Hunter"]
+color = Color(0.117647, 0.690196, 0.34902, 1)
+polygon = PackedVector2Array(0, -22, 18, 12, -18, 12)
+
+[node name="Label" type="Label" parent="Hunter"]
+offset_left = -38.0
+offset_top = 18.0
+offset_right = 60.0
+offset_bottom = 43.0
+text = "猎人"
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="PanelContainer" parent="UI"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 584.0
+offset_bottom = 380.0
+
+[node name="VBox" type="VBoxContainer" parent="UI/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleRow" type="HBoxContainer" parent="UI/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="UI/Panel/VBox/TitleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "AI NPC 村庄切片"
+
+[node name="TickLabel" type="Label" parent="UI/Panel/VBox/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Tick: 0"
+
+[node name="StatusLabel" type="Label" parent="UI/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Starting..."
+autowrap_mode = 3
+
+[node name="SelectedLabel" type="Label" parent="UI/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "附近 NPC: 无"
+
+[node name="DialogueLog" type="RichTextLabel" parent="UI/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 84)
+bbcode_enabled = true
+scroll_active = false
+text = "连续对话会显示在这里。"
+
+[node name="SpeechInput" type="LineEdit" parent="UI/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "对附近 NPC 说点什么..."
+
+[node name="ButtonRow" type="HBoxContainer" parent="UI/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SubmitButton" type="Button" parent="UI/Panel/VBox/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "提交 / E"
+
+[node name="SuspiciousEventButton" type="Button" parent="UI/Panel/VBox/ButtonRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "可疑人物 / O"
+
+[node name="PlanExecuteButton" type="Button" parent="UI/Panel/VBox/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "规划并执行 / P"
+
+[node name="ResetButton" type="Button" parent="UI/Panel/VBox/ButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "重置 / R"
+
+[node name="EventRow" type="HBoxContainer" parent="UI/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MonsterEventButton" type="Button" parent="UI/Panel/VBox/EventRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Monster at Gate"
+
+[node name="ResourceEventButton" type="Button" parent="UI/Panel/VBox/EventRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Resource Shortage"
+
+[node name="TheftEventButton" type="Button" parent="UI/Panel/VBox/EventRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Player Stole"
+
+[node name="AdvanceTickButton" type="Button" parent="UI/Panel/VBox"]
+layout_mode = 2
+text = "推进时间 / T"
+
+[node name="ThoughtPanel" type="PanelContainer" parent="UI"]
+offset_left = 16.0
+offset_top = 396.0
+offset_right = 584.0
+offset_bottom = 704.0
+
+[node name="ThoughtLog" type="RichTextLabel" parent="UI/ThoughtPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+scroll_active = false
+text = "模型思考与规则裁决会显示在这里。"
+
+[node name="TaskPanel" type="PanelContainer" parent="UI"]
+offset_left = 712.0
+offset_top = 16.0
+offset_right = 1264.0
+offset_bottom = 312.0
+
+[node name="TaskLog" type="RichTextLabel" parent="UI/TaskPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+scroll_active = false
+text = "正在加载 NPC 任务..."
+
+[node name="EventPanel" type="PanelContainer" parent="UI"]
+offset_left = 712.0
+offset_top = 328.0
+offset_right = 1264.0
+offset_bottom = 500.0
+
+[node name="EventLog" type="RichTextLabel" parent="UI/EventPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+scroll_active = false
+text = "世界事件、报告与验证结果会显示在这里。"
+
+[node name="EventDetailPanel" type="PanelContainer" parent="UI"]
+offset_left = 712.0
+offset_top = 516.0
+offset_right = 1264.0
+offset_bottom = 704.0
+
+[node name="EventDetailLog" type="RichTextLabel" parent="UI/EventDetailPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+scroll_active = false
+text = "事件目录详情会显示在这里。"
+
+[connection signal="pressed" from="UI/Panel/VBox/ButtonRow/SubmitButton" to="." method="_on_submit_button_pressed"]
+[connection signal="pressed" from="UI/Panel/VBox/ButtonRow/SuspiciousEventButton" to="." method="_on_suspicious_event_button_pressed"]
+[connection signal="pressed" from="UI/Panel/VBox/ButtonRow/PlanExecuteButton" to="." method="_on_plan_execute_button_pressed"]
+[connection signal="pressed" from="UI/Panel/VBox/ButtonRow/ResetButton" to="." method="_on_reset_button_pressed"]
+[connection signal="pressed" from="UI/Panel/VBox/EventRow/MonsterEventButton" to="." method="_on_monster_event_button_pressed"]
+[connection signal="pressed" from="UI/Panel/VBox/EventRow/ResourceEventButton" to="." method="_on_resource_event_button_pressed"]
+[connection signal="pressed" from="UI/Panel/VBox/EventRow/TheftEventButton" to="." method="_on_theft_event_button_pressed"]
+[connection signal="pressed" from="UI/Panel/VBox/AdvanceTickButton" to="." method="_on_advance_tick_button_pressed"]

@@ -1,0 +1,89 @@
+{
+  "npc_id": "npc_hunter_001",
+  "name": "Aren",
+  "role": "hunter",
+  "location_id": "forest_edge",
+  "base_attributes": {
+    "strength": 6,
+    "technique": 7,
+    "logic": 4,
+    "perception": 8,
+    "influence": 3
+  },
+  "personality": {
+    "bravery": 7,
+    "kindness": 4,
+    "prudence": 5,
+    "greed": 3,
+    "curiosity": 6
+  },
+  "needs": {
+    "energy": 58,
+    "hunger": 68,
+    "safety": 62,
+    "social": 25
+  },
+  "relationships": [
+    {
+      "target_id": "npc_guard_001",
+      "favor": 8,
+      "trust": 15,
+      "hostility": 0
+    },
+    {
+      "target_id": "npc_merchant_001",
+      "favor": 2,
+      "trust": 4,
+      "hostility": 0
+    }
+  ],
+  "current_task": {
+    "task_type": "hunt",
+    "target_id": null,
+    "location_id": "forest_edge",
+    "priority": 65,
+    "interruptible": true
+  },
+  "task_queue": [
+    {
+      "task_id": "task_hunter_001",
+      "task_type": "trade",
+      "target_id": "npc_merchant_001",
+      "location_id": "market",
+      "priority": 45,
+      "interruptible": true,
+      "source": "routine",
+      "status": "queued"
+    }
+  ],
+  "message_queue": [
+    {
+      "message_id": "msg_hunter_001",
+      "message_type": "warning",
+      "from_id": "npc_guard_001",
+      "priority": 50,
+      "created_at_tick": 118
+    }
+  ],
+  "memory_summary": [
+    {
+      "memory_id": "mem_hunter_001",
+      "summary": "Tracks near the forest edge looked fresh.",
+      "importance": 70,
+      "related_ids": [
+        "forest_edge"
+      ],
+      "created_at_tick": 90
+    }
+  ],
+  "learning_bias": {
+    "risk_preference_delta": -5,
+    "cooperation_bias_delta": 0,
+    "combat_confidence_delta": 8
+  },
+  "runtime_flags": {
+    "is_critical_npc": false,
+    "thought_cooldown_ticks": 20,
+    "last_thought_tick": 100
+  }
+}

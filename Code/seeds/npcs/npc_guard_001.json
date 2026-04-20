@@ -1,0 +1,81 @@
+{
+  "npc_id": "npc_guard_001",
+  "name": "Darin",
+  "role": "guard",
+  "location_id": "village_gate",
+  "base_attributes": {
+    "strength": 7,
+    "technique": 6,
+    "logic": 5,
+    "perception": 6,
+    "influence": 4
+  },
+  "personality": {
+    "bravery": 8,
+    "kindness": 5,
+    "prudence": 6,
+    "greed": 2,
+    "curiosity": 3
+  },
+  "needs": {
+    "energy": 70,
+    "hunger": 35,
+    "safety": 80,
+    "social": 20
+  },
+  "relationships": [
+    {
+      "target_id": "npc_merchant_001",
+      "favor": 5,
+      "trust": 10,
+      "hostility": 0
+    },
+    {
+      "target_id": "npc_hunter_001",
+      "favor": 8,
+      "trust": 12,
+      "hostility": 0
+    }
+  ],
+  "current_task": {
+    "task_type": "patrol",
+    "target_id": null,
+    "location_id": "village_gate",
+    "priority": 60,
+    "interruptible": true
+  },
+  "task_queue": [
+    {
+      "task_id": "task_guard_001",
+      "task_type": "investigate",
+      "target_id": null,
+      "location_id": "market",
+      "priority": 40,
+      "interruptible": true,
+      "source": "message",
+      "status": "queued"
+    }
+  ],
+  "message_queue": [],
+  "memory_summary": [
+    {
+      "memory_id": "mem_guard_001",
+      "summary": "The market crowd grew restless near sunset.",
+      "importance": 55,
+      "related_ids": [
+        "market"
+      ],
+      "created_at_tick": 80
+    }
+  ],
+  "learning_bias": {
+    "risk_preference_delta": 0,
+    "cooperation_bias_delta": 5,
+    "combat_confidence_delta": 0
+  },
+  "runtime_flags": {
+    "is_critical_npc": true,
+    "thought_cooldown_ticks": 20,
+    "last_thought_tick": 0
+  }
+}

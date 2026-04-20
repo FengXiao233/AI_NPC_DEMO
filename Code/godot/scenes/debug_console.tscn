@@ -1,0 +1,211 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/DebugConsole.gd" id="1_debug"]
+
+[node name="DebugConsole" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_debug")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Root" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Toolbar" type="HBoxContainer" parent="RootMargin/Root"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RefreshButton" type="Button" parent="RootMargin/Root/Toolbar"]
+layout_mode = 2
+text = "Refresh"
+
+[node name="ResetButton" type="Button" parent="RootMargin/Root/Toolbar"]
+layout_mode = 2
+text = "Reset World"
+
+[node name="MonsterEventButton" type="Button" parent="RootMargin/Root/Toolbar"]
+layout_mode = 2
+text = "Monster at Gate"
+
+[node name="SuspiciousEventButton" type="Button" parent="RootMargin/Root/Toolbar"]
+layout_mode = 2
+text = "Suspicious Arrival"
+
+[node name="PlanSelectedButton" type="Button" parent="RootMargin/Root/Toolbar"]
+layout_mode = 2
+text = "Plan Selected"
+
+[node name="ExecuteSelectedButton" type="Button" parent="RootMargin/Root/Toolbar"]
+layout_mode = 2
+text = "Execute Selected"
+
+[node name="TickButton" type="Button" parent="RootMargin/Root/Toolbar"]
+layout_mode = 2
+text = "Run Tick"
+
+[node name="TickLabel" type="Label" parent="RootMargin/Root/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Tick: 0"
+
+[node name="ScenarioToolbar" type="HBoxContainer" parent="RootMargin/Root"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ScenarioLabel" type="Label" parent="RootMargin/Root/ScenarioToolbar"]
+layout_mode = 2
+text = "Scenarios"
+
+[node name="LieScenarioButton" type="Button" parent="RootMargin/Root/ScenarioToolbar"]
+layout_mode = 2
+text = "Run Lie Scenario"
+
+[node name="TrueScenarioButton" type="Button" parent="RootMargin/Root/ScenarioToolbar"]
+layout_mode = 2
+text = "Run True Scenario"
+
+[node name="StatusLabel" type="Label" parent="RootMargin/Root"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ready."
+autowrap_mode = 3
+
+[node name="MainSplit" type="HSplitContainer" parent="RootMargin/Root"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 260
+
+[node name="NpcPanel" type="VBoxContainer" parent="RootMargin/Root/MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="NpcTitle" type="Label" parent="RootMargin/Root/MainSplit/NpcPanel"]
+layout_mode = 2
+text = "NPCs"
+
+[node name="NpcList" type="ItemList" parent="RootMargin/Root/MainSplit/NpcPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="UtteranceTitle" type="Label" parent="RootMargin/Root/MainSplit/NpcPanel"]
+layout_mode = 2
+text = "Player speech to selected NPC"
+
+[node name="UtteranceRow" type="HBoxContainer" parent="RootMargin/Root/MainSplit/NpcPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PlayerUtteranceInput" type="LineEdit" parent="RootMargin/Root/MainSplit/NpcPanel/UtteranceRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "e.g. 村口来了一个很奇怪的商人。"
+
+[node name="SubmitUtteranceButton" type="Button" parent="RootMargin/Root/MainSplit/NpcPanel/UtteranceRow"]
+layout_mode = 2
+text = "Submit"
+
+[node name="DetailTabs" type="TabContainer" parent="RootMargin/Root/MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="NPC State" type="MarginContainer" parent="RootMargin/Root/MainSplit/DetailTabs"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="NpcDetail" type="TextEdit" parent="RootMargin/Root/MainSplit/DetailTabs/NPC State"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+wrap_mode = 1
+
+[node name="Memories" type="MarginContainer" parent="RootMargin/Root/MainSplit/DetailTabs"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="MemoryLog" type="TextEdit" parent="RootMargin/Root/MainSplit/DetailTabs/Memories"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+wrap_mode = 1
+
+[node name="Beliefs" type="MarginContainer" parent="RootMargin/Root/MainSplit/DetailTabs"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="BeliefLog" type="TextEdit" parent="RootMargin/Root/MainSplit/DetailTabs/Beliefs"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+wrap_mode = 1
+
+[node name="Events" type="MarginContainer" parent="RootMargin/Root/MainSplit/DetailTabs"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="EventLog" type="TextEdit" parent="RootMargin/Root/MainSplit/DetailTabs/Events"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+wrap_mode = 1
+
+[node name="Tick Result" type="MarginContainer" parent="RootMargin/Root/MainSplit/DetailTabs"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="TickLog" type="TextEdit" parent="RootMargin/Root/MainSplit/DetailTabs/Tick Result"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+wrap_mode = 1
+
+[connection signal="pressed" from="RootMargin/Root/Toolbar/RefreshButton" to="." method="_on_refresh_pressed"]
+[connection signal="pressed" from="RootMargin/Root/Toolbar/ResetButton" to="." method="_on_reset_pressed"]
+[connection signal="pressed" from="RootMargin/Root/Toolbar/MonsterEventButton" to="." method="_on_monster_event_pressed"]
+[connection signal="pressed" from="RootMargin/Root/Toolbar/SuspiciousEventButton" to="." method="_on_suspicious_event_pressed"]
+[connection signal="pressed" from="RootMargin/Root/Toolbar/PlanSelectedButton" to="." method="_on_plan_selected_pressed"]
+[connection signal="pressed" from="RootMargin/Root/Toolbar/ExecuteSelectedButton" to="." method="_on_execute_selected_pressed"]
+[connection signal="pressed" from="RootMargin/Root/Toolbar/TickButton" to="." method="_on_tick_pressed"]
+[connection signal="pressed" from="RootMargin/Root/ScenarioToolbar/LieScenarioButton" to="." method="_on_lie_scenario_pressed"]
+[connection signal="pressed" from="RootMargin/Root/ScenarioToolbar/TrueScenarioButton" to="." method="_on_true_scenario_pressed"]
+[connection signal="item_selected" from="RootMargin/Root/MainSplit/NpcPanel/NpcList" to="." method="_on_npc_selected"]
+[connection signal="pressed" from="RootMargin/Root/MainSplit/NpcPanel/UtteranceRow/SubmitUtteranceButton" to="." method="_on_submit_utterance_pressed"]
