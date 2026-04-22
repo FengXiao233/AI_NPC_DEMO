@@ -1,7 +1,7 @@
 import sqlite3
 from typing import Any
 
-from app.models import AgentState, MemorySummary, NpcBelief, StrictSchemaModel
+from app.models import AgentState, MemorySummary, NpcBelief, StoredEventRecord, StrictSchemaModel
 from app.relationship_effects import upsert_relationship
 from app.state_repository import (
     find_event_records_by_topic,
@@ -23,23 +23,44 @@ class BeliefVerificationResult(StrictSchemaModel):
     notes: str
 
 
+class BeliefVerificationPreview(StrictSchemaModel):
+    result: BeliefVerificationResult
+    expires_at_tick: int | None = None
+    memory: MemorySummary
+
+
 def verify_investigation_task(
     connection: sqlite3.Connection,
     agent_state: AgentState,
     task: dict[str, Any],
 ) -> BeliefVerificationResult | None:
     belief = select_belief_for_investigation(agent_state, task)
+    if belief is None:
+        return None
+
+    evidence_events = find_event_records_by_topic(
+        connection,
+        belief.topic_hint,
+        task.get("location_id") or agent_state.location_id,
+        belief.created_at_tick,
+    )
+    preview = preview_investigation_task(agent_state, task, evidence_events)
+    if preview is None:
+        return None
+    commit_belief_verification_preview(connection, preview)
+    return preview.result
+
+
+def preview_investigation_task(
+    agent_state: AgentState,
+    task: dict[str, Any],
+    evidence_events: list[StoredEventRecord],
+) -> BeliefVerificationPreview | None:
+    belief = select_belief_for_investigation(agent_state, task)
     if belief is None or belief.truth_status != "unverified":
         return None
 
     investigation_location = task.get("location_id") or agent_state.location_id
-    evidence_events = find_event_records_by_topic(
-        connection,
-        belief.topic_hint,
-        investigation_location,
-        belief.created_at_tick,
-    )
-
     current_tick = agent_state.runtime_flags.last_thought_tick
     if evidence_events:
         truth_status = "confirmed"
@@ -57,14 +78,6 @@ def verify_investigation_task(
         current_tick,
         lifetime_ticks=600 if truth_status == "confirmed" else 240,
     )
-    update_npc_belief_truth_status(
-        connection,
-        belief.belief_id,
-        truth_status=truth_status,
-        confidence=confidence,
-        expires_at_tick=expires_at_tick,
-    )
-
     memory = build_verification_memory(
         agent_state,
         belief,
@@ -73,10 +86,7 @@ def verify_investigation_task(
         location_id=investigation_location,
         current_tick=current_tick,
     )
-    store_memory_record(connection, agent_state.npc_id, memory)
-
-    relationship_update = apply_source_relationship_update(
-        connection,
+    relationship_update = build_source_relationship_update(
         agent_state,
         belief,
         truth_status,
@@ -88,18 +98,47 @@ def verify_investigation_task(
         location_id=investigation_location,
         current_tick=current_tick,
     )
+    return BeliefVerificationPreview(
+        result=BeliefVerificationResult(
+            belief_id=belief.belief_id,
+            npc_id=agent_state.npc_id,
+            previous_status=belief.truth_status,
+            truth_status=truth_status,
+            confidence=confidence,
+            evidence_event_ids=evidence_ids,
+            memory_id=memory.memory_id,
+            follow_up_task=follow_up_task,
+            relationship_update=relationship_update,
+            notes=notes,
+        ),
+        expires_at_tick=expires_at_tick,
+        memory=memory,
+    )
 
-    return BeliefVerificationResult(
-        belief_id=belief.belief_id,
-        npc_id=agent_state.npc_id,
-        previous_status=belief.truth_status,
-        truth_status=truth_status,
-        confidence=confidence,
-        evidence_event_ids=evidence_ids,
-        memory_id=memory.memory_id,
-        follow_up_task=follow_up_task,
-        relationship_update=relationship_update,
-        notes=notes,
+
+def commit_belief_verification_preview(
+    connection: sqlite3.Connection,
+    preview: BeliefVerificationPreview,
+) -> None:
+    update_npc_belief_truth_status(
+        connection,
+        preview.result.belief_id,
+        truth_status=preview.result.truth_status,
+        confidence=preview.result.confidence,
+        expires_at_tick=preview.expires_at_tick,
+    )
+    store_memory_record(connection, preview.result.npc_id, preview.memory)
+
+    relationship_update = preview.result.relationship_update
+    if relationship_update is None:
+        return
+    upsert_relationship(
+        connection,
+        npc_id=relationship_update["npc_id"],
+        target_id=relationship_update["target_id"],
+        favor_delta=relationship_update["favor_delta"],
+        trust_delta=relationship_update["trust_delta"],
+        hostility_delta=relationship_update["hostility_delta"],
     )
 
 
@@ -241,13 +280,12 @@ def queued_task(
     }
 
 
-def apply_source_relationship_update(
-    connection: sqlite3.Connection,
+def build_source_relationship_update(
     agent_state: AgentState,
     belief: NpcBelief,
     truth_status: str,
 ) -> dict[str, Any] | None:
-    if belief.source_type != "player_utterance":
+    if belief.source_type not in {"player_utterance", "npc_report", "rumor"}:
         return None
 
     source_message = next(
@@ -262,12 +300,6 @@ def apply_source_relationship_update(
     else:
         deltas = {"favor_delta": -2, "trust_delta": -8, "hostility_delta": 2}
 
-    upsert_relationship(
-        connection,
-        npc_id=agent_state.npc_id,
-        target_id=source_message.from_id,
-        **deltas,
-    )
     return {
         "npc_id": agent_state.npc_id,
         "target_id": source_message.from_id,

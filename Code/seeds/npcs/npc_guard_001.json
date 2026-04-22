@@ -5,6 +5,7 @@
   "location_id": "village_gate",
   "base_attributes": {
     "strength": 7,
+    "endurance": 7,
     "technique": 6,
     "logic": 5,
     "perception": 6,
@@ -15,11 +16,19 @@
     "kindness": 5,
     "prudence": 6,
     "greed": 2,
-    "curiosity": 3
+    "curiosity": 3,
+    "empathy": 4,
+    "discipline": 8,
+    "conformity": 7,
+    "ambition": 4,
+    "loyalty": 8,
+    "aggression": 4,
+    "patience": 6
   },
   "needs": {
     "energy": 70,
     "hunger": 35,
+    "health": 92,
     "safety": 80,
     "social": 20
   },
@@ -74,8 +83,10 @@
     "combat_confidence_delta": 0
   },
   "runtime_flags": {
-    "is_critical_npc": true,
+    "is_critical_npc": false,
+    "priority_tier": "normal",
     "thought_cooldown_ticks": 20,
-    "last_thought_tick": 0
+    "last_thought_tick": 0,
+    "last_plan_tick": 0
   }
 }

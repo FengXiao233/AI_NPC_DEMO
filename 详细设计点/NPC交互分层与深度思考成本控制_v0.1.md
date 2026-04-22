@@ -250,13 +250,31 @@ world_event
 
 ```text
 player_utterance
+  -> DialogueInterpreter / LLM 解释话语意图
   -> topic_hint / credibility
+  -> npc_reply 返回给前端作为 NPC 即时回应
   -> 目标 NPC message_queue
   -> 可信度足够时形成该 NPC 自己的 npc_belief
   -> fallback/thought/LLM 决定应对
   -> ActionPlanner 决定任务
   -> TaskExecutor 执行并回写
 ```
+
+### 自由对话与事件对话固定规则
+
+从当前版本开始，玩家与 NPC 的对话分成同一入口下的两种结果：
+
+- 普通自由对话：模型或兜底规则生成 `npc_reply`，不生成 `npc_belief`，不改变客观世界。
+- 事件相关对话：模型或兜底规则识别 `topic_hint`、`claim`、`confidence_delta`、`urgency`，可信度足够时只生成目标 NPC 自己的 `npc_belief`。
+
+固定边界：
+
+- 玩家话语接口必须返回 `npc_reply`，前端可直接展示，但这只是对话表现，不代表事实成立。
+- `reply_text` 可以由模型生成；模型失败时允许规则兜底，但兜底不能替代长期自由对话目标。
+- `dialogue_processor` 只负责解释话语、入队、生成 belief 和返回 NPC 回复，不能直接安排复杂社会行为。
+- NPC 后续行动仍必须经过 `thought/fallback/LLM -> ActionPlanner -> TaskExecutor`。
+- 前端头顶 `...` 只是请求等待态，用于表达 NPC 正在思考；它不写入记忆、belief 或事件。
+- 目标 NPC 必须由玩家当前靠近/选中的 NPC 决定，不能固定为守卫。
 
 例如玩家告诉商人“村口有可疑陌生人”：
 

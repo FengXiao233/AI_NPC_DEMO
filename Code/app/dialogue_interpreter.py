@@ -47,6 +47,7 @@ class DialogueInterpreter(Protocol):
         speaker_id: str,
         content: str,
         created_at_tick: int,
+        dialogue_context: dict | None = None,
     ) -> UtteranceInterpretation:
         ...
 
@@ -72,8 +73,9 @@ class LlmDialogueInterpreter:
         speaker_id: str,
         content: str,
         created_at_tick: int,
+        dialogue_context: dict | None = None,
     ) -> UtteranceInterpretation:
-        payload = self._build_payload(agent_state, speaker_id, content, created_at_tick)
+        payload = self._build_payload(agent_state, speaker_id, content, created_at_tick, dialogue_context)
         body = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
             self.base_url,
@@ -88,8 +90,15 @@ class LlmDialogueInterpreter:
             response_payload = json.loads(response.read().decode("utf-8"))
         content_text = self._extract_response_text(response_payload)
         parsed = json.loads(content_text)
+        parsed = self._normalize_model_output(parsed)
         parsed["source"] = "llm"
         return UtteranceInterpretation.model_validate(parsed)
+
+    def _normalize_model_output(self, parsed: dict) -> dict:
+        nested_schema = parsed.get("schema")
+        if isinstance(nested_schema, dict) and "reply_text" in nested_schema:
+            return nested_schema
+        return parsed
 
     def _build_payload(
         self,
@@ -97,13 +106,18 @@ class LlmDialogueInterpreter:
         speaker_id: str,
         content: str,
         created_at_tick: int,
+        dialogue_context: dict | None = None,
     ) -> dict:
-        context = self._build_context(agent_state, speaker_id, content, created_at_tick)
+        context = self._build_context(agent_state, speaker_id, content, created_at_tick, dialogue_context)
         system_prompt = (
             "You interpret player utterances for an AI NPC social simulation. "
             "Return only one raw JSON object matching the requested schema. "
             "You may propose an NPC subjective belief, but you must never create objective world events. "
-            "Also write a short in-character NPC reply to the player."
+            "Also write a short in-character NPC reply to the player. "
+            "When dialogue context is provided, keep the reply continuous with the recent conversation. "
+            "Prioritize the player's latest utterance over older dialogue context. "
+            "Reply in the same language as the player's latest utterance; if it is Chinese, reply in Chinese. "
+            "Do not treat older unreadable or garbled context as the current player intent when the latest utterance is clear."
         )
         user_prompt = json.dumps(context, ensure_ascii=False)
         if self.api_style == "responses":
@@ -156,8 +170,9 @@ class LlmDialogueInterpreter:
         speaker_id: str,
         content: str,
         created_at_tick: int,
+        dialogue_context: dict | None = None,
     ) -> dict:
-        return {
+        context = {
             "npc": {
                 "npc_id": agent_state.npc_id,
                 "name": agent_state.name,
@@ -199,6 +214,12 @@ class LlmDialogueInterpreter:
                 "If the utterance is casual conversation, answer naturally without creating a belief.",
             ],
         }
+        if dialogue_context is not None:
+            context["dialogue_context"] = dialogue_context
+            context["reply_rules"].append(
+                "Use dialogue_context.summary and dialogue_context.recent_turns to maintain continuity."
+            )
+        return context
 
     def _extract_response_text(self, response_payload: dict) -> str:
         if "choices" in response_payload:

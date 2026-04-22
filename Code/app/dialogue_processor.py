@@ -2,9 +2,11 @@ import sqlite3
 
 from pydantic import Field
 
+from app.dialogue_history import build_dialogue_context_payload, store_dialogue_exchange
 from app.dialogue_interpreter import DialogueInterpreter, UtteranceInterpretation, configured_llm_interpreter
-from app.models import AgentState, Message, NpcBelief, StrictSchemaModel
-from app.state_repository import load_agent_state, update_npc_message_queue, upsert_npc_belief
+from app.models import AgentState, MemorySummary, Message, NpcBelief, StrictSchemaModel
+from app.state_repository import load_agent_state, store_memory_record, update_npc_message_queue, upsert_npc_belief
+from scripts.init_sqlite import dump_json
 
 
 class PlayerUtteranceRequest(StrictSchemaModel):
@@ -52,7 +54,8 @@ def receive_player_utterance(
     if agent_state is None:
         return None
 
-    interpretation = interpret_player_utterance(agent_state, request, interpreter)
+    dialogue_context = build_dialogue_context_payload(connection, npc_id, request.speaker_id)
+    interpretation = interpret_player_utterance(agent_state, request, dialogue_context, interpreter)
     topic_hint = interpretation.topic_hint
     credibility = clamp(
         estimate_credibility(agent_state, request.speaker_id, topic_hint) + interpretation.confidence_delta,
@@ -84,6 +87,21 @@ def receive_player_utterance(
     )
     if belief is not None:
         upsert_npc_belief(connection, npc_id, belief)
+    npc_reply = build_npc_reply(agent_state, interpretation, belief)
+    dialogue_memory = build_memory_from_key_dialogue(agent_state, message, interpretation, npc_reply)
+    if dialogue_memory is not None:
+        store_memory_record(connection, npc_id, dialogue_memory)
+    store_dialogue_exchange(
+        connection,
+        npc_id=npc_id,
+        speaker_id=request.speaker_id,
+        npc_label=agent_state.name,
+        player_content=request.content,
+        npc_reply=npc_reply,
+        created_at_tick=request.created_at_tick,
+        exchange_id=message.message_id,
+    )
+    complete_matching_talk_task(connection, agent_state, request.speaker_id)
     connection.commit()
 
     return PlayerUtteranceResult(
@@ -94,7 +112,7 @@ def receive_player_utterance(
         interpretation=interpretation,
         queued_message=message,
         belief=belief,
-        npc_reply=build_npc_reply(agent_state, interpretation, belief),
+        npc_reply=npc_reply,
         forwarded_to_npc_ids=[],
         notes=f"Player utterance interpreted by {interpretation.source}; no objective world event was created.",
     )
@@ -103,6 +121,7 @@ def receive_player_utterance(
 def interpret_player_utterance(
     agent_state: AgentState,
     request: PlayerUtteranceRequest,
+    dialogue_context: dict | None = None,
     interpreter: DialogueInterpreter | None = None,
 ) -> UtteranceInterpretation:
     selected_interpreter = interpreter or configured_llm_interpreter()
@@ -113,6 +132,7 @@ def interpret_player_utterance(
                 request.speaker_id,
                 request.content,
                 request.created_at_tick,
+                dialogue_context,
             )
         except Exception:
             pass
@@ -210,6 +230,66 @@ def append_or_replace_message(agent_state: AgentState, message: Message) -> list
     return sorted(messages, key=lambda item: (item.priority, item.created_at_tick), reverse=True)[:10]
 
 
+def complete_matching_talk_task(
+    connection: sqlite3.Connection,
+    agent_state: AgentState,
+    speaker_id: str,
+) -> None:
+    current_task = agent_state.current_task.model_dump(mode="json")
+    if current_task.get("task_type") != "talk":
+        return
+    target_id = current_task.get("target_id")
+    if target_id not in {None, speaker_id}:
+        return
+
+    task_queue = [task.model_dump(mode="json") for task in agent_state.task_queue]
+    next_current_task, remaining_queue = pop_next_dialogue_task(agent_state.location_id, task_queue)
+    connection.execute(
+        """
+        UPDATE npc_state
+        SET current_task_json = ?,
+            task_queue_json = ?
+        WHERE npc_id = ?
+        """,
+        (
+            dump_json(next_current_task),
+            dump_json(remaining_queue),
+            agent_state.npc_id,
+        ),
+    )
+
+
+def pop_next_dialogue_task(
+    location_id: str,
+    task_queue: list[dict],
+) -> tuple[dict, list[dict]]:
+    if not task_queue:
+        return idle_dialogue_task(location_id), []
+    next_task = max(task_queue, key=lambda task: task["priority"])
+    remaining_queue = [task for task in task_queue if task["task_id"] != next_task["task_id"]]
+    return queued_dialogue_task_to_current_task(next_task), remaining_queue
+
+
+def queued_dialogue_task_to_current_task(task: dict) -> dict:
+    return {
+        "task_type": task["task_type"],
+        "target_id": task["target_id"],
+        "location_id": task["location_id"],
+        "priority": task["priority"],
+        "interruptible": task["interruptible"],
+    }
+
+
+def idle_dialogue_task(location_id: str) -> dict:
+    return {
+        "task_type": "idle",
+        "target_id": None,
+        "location_id": location_id,
+        "priority": 0,
+        "interruptible": True,
+    }
+
+
 def should_form_belief(message: Message, interpretation: UtteranceInterpretation) -> bool:
     return (
         interpretation.should_create_belief
@@ -218,10 +298,59 @@ def should_form_belief(message: Message, interpretation: UtteranceInterpretation
     )
 
 
+def build_memory_from_key_dialogue(
+    agent_state: AgentState,
+    message: Message,
+    interpretation: UtteranceInterpretation,
+    npc_reply: str,
+) -> MemorySummary | None:
+    importance = dialogue_memory_importance(message, interpretation)
+    if importance < 55:
+        return None
+
+    summary = truncate_memory_summary(
+        f"Player told {agent_state.name}: {message.content or ''} "
+        f"{agent_state.name} replied: {npc_reply}"
+    )
+    related_ids = [
+        message.from_id,
+        *(item for item in [message.topic_hint, interpretation.target_id, interpretation.location_id] if item),
+    ]
+    return MemorySummary(
+        memory_id=f"mem_{agent_state.npc_id}_{message.message_id}_dialogue",
+        summary=summary,
+        importance=importance,
+        related_ids=list(dict.fromkeys(related_ids)),
+        created_at_tick=message.created_at_tick,
+        expires_at_tick=message.created_at_tick + 120 + importance * 5,
+    )
+
+
+def dialogue_memory_importance(message: Message, interpretation: UtteranceInterpretation) -> int:
+    importance = max(message.priority, interpretation.urgency)
+    if interpretation.should_create_belief:
+        importance += 10
+    if message.topic_hint is not None:
+        importance += 8
+    if interpretation.recommended_action is not None:
+        importance += 6
+    if (message.credibility or 0) >= 65:
+        importance += 5
+    return clamp(importance, 0, 100)
+
+
+def truncate_memory_summary(summary: str, limit: int = 300) -> str:
+    normalized = " ".join(summary.strip().split())
+    if len(normalized) <= limit:
+        return normalized
+    return normalized[: limit - 3].rstrip() + "..."
+
+
 def build_belief_from_utterance(
     npc_id: str,
     message: Message,
     interpretation: UtteranceInterpretation | None = None,
+    source_type: str = "player_utterance",
 ) -> NpcBelief:
     claim = ""
     if interpretation is not None:
@@ -230,7 +359,7 @@ def build_belief_from_utterance(
         claim = message.content or ""
     return NpcBelief(
         belief_id=f"belief_{npc_id}_{message.message_id}",
-        source_type="player_utterance",
+        source_type=source_type,
         source_id=message.message_id,
         topic_hint=message.topic_hint,
         claim=claim,

@@ -5,9 +5,9 @@ from scripts.init_sqlite import dump_json
 
 
 PASSIVE_NEED_DRIFT = {
-    "hunger": 2,
+    "hunger": 3,
     "energy": -1,
-    "social": 1,
+    "social": 2,
 }
 
 
@@ -22,6 +22,12 @@ def apply_passive_state_drift(
     needs = agent_state.needs.model_dump(mode="json")
     for need_name, delta in PASSIVE_NEED_DRIFT.items():
         needs[need_name] = clamp_need(needs[need_name] + delta)
+    if needs["hunger"] >= 85:
+        needs["health"] = clamp_need(needs["health"] - 3)
+    elif needs["hunger"] >= 70:
+        needs["health"] = clamp_need(needs["health"] - 1)
+    if needs["safety"] <= 25:
+        needs["health"] = clamp_need(needs["health"] - 1)
 
     connection.execute(
         """

@@ -46,7 +46,7 @@ def test_summarize_events_keeps_relevant_ranked_memories() -> None:
     assert all(isinstance(memory, MemorySummary) for memory in memories)
     assert memories[0].summary == "The player helped npc_merchant_001."
     assert memories[0].importance == 100
-    assert memories[0].expires_at_tick == 3025
+    assert memories[0].expires_at_tick == 3725
 
 
 def test_summarize_events_respects_max_items_and_recency_tiebreak() -> None:
@@ -99,4 +99,44 @@ def test_player_stole_uses_catalog_memory_rules() -> None:
 
     assert memories[0].summary == "The player stole from npc_merchant_001."
     assert memories[0].importance == 100
-    assert memories[0].expires_at_tick == 2900
+    assert memories[0].expires_at_tick == 3600
+
+
+def test_event_importance_changes_memory_retention() -> None:
+    low_importance = summarize_events_for_npc(
+        "npc_merchant_001",
+        [
+            {
+                "event_id": "evt_low_food_memory",
+                "event_type": "food_shortage",
+                "actor_id": None,
+                "target_id": None,
+                "location_id": "market",
+                "payload": {"related_ids": ["npc_merchant_001"]},
+                "importance": 30,
+                "created_at_tick": 300,
+            },
+        ],
+        minimum_importance=0,
+    )[0]
+    high_importance = summarize_events_for_npc(
+        "npc_merchant_001",
+        [
+            {
+                "event_id": "evt_high_food_memory",
+                "event_type": "food_shortage",
+                "actor_id": None,
+                "target_id": None,
+                "location_id": "market",
+                "payload": {"related_ids": ["npc_merchant_001"]},
+                "importance": 80,
+                "created_at_tick": 300,
+            },
+        ],
+        minimum_importance=0,
+    )[0]
+
+    assert high_importance.importance > low_importance.importance
+    assert high_importance.expires_at_tick - high_importance.created_at_tick > (
+        low_importance.expires_at_tick - low_importance.created_at_tick
+    )

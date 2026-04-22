@@ -21,14 +21,18 @@ def build_fallback_thought(agent_state: AgentState) -> ThoughtResult:
 
 
 def choose_primary_goal(agent_state: AgentState) -> str:
+    if identity_value(agent_state) == "monster":
+        return "hunt"
     if has_message_type(agent_state, "threat_alert") or agent_state.needs.safety < 35:
         return "avoid_threat"
     if has_belief_topic(agent_state, "monster_threat") or has_player_utterance_topic(agent_state, "monster_threat"):
         return "avoid_threat"
-    if agent_state.role == "merchant" and has_belief_topic(agent_state, "suspicious_arrival", truth_statuses={"unverified"}):
+    if profession_value(agent_state) == "merchant" and has_belief_topic(agent_state, "suspicious_arrival", truth_statuses={"unverified"}):
         return "report"
     if has_belief_topic(agent_state, "suspicious_arrival", truth_statuses={"unverified"}) or has_player_utterance_topic(agent_state, "suspicious_arrival"):
         return "investigate"
+    if agent_state.needs.health <= 55:
+        return "heal"
     if agent_state.needs.hunger >= 65:
         return "get_food"
     if has_message_type(agent_state, "help_request"):
@@ -39,11 +43,17 @@ def choose_primary_goal(agent_state: AgentState) -> str:
         return "rest"
     if agent_state.needs.social >= 65:
         return "maintain_relationship"
-    if agent_state.role == "merchant":
+    if profession_value(agent_state) == "merchant":
         return "trade"
-    if agent_state.role == "guard":
+    if profession_value(agent_state) in {"farmer", "blacksmith"}:
+        return "produce"
+    if profession_value(agent_state) == "physician":
+        return "help_other"
+    if profession_value(agent_state) == "village_chief":
         return "patrol"
-    if agent_state.role == "hunter":
+    if profession_value(agent_state) == "guard":
+        return "patrol"
+    if profession_value(agent_state) == "hunter":
         return "hunt"
     return "maintain_relationship"
 
@@ -159,6 +169,13 @@ def choose_candidate_actions(agent_state: AgentState, primary_goal: str) -> list
         candidate_actions.extend(
             [
                 CandidateAction(
+                    action_type="eat",
+                    target_id=None,
+                    location_id=agent_state.location_id,
+                    score=90 if agent_state.needs.hunger >= 70 else 72,
+                    reason="Hunger can only recover by consuming food.",
+                ),
+                CandidateAction(
                     action_type="gather",
                     target_id=None,
                     location_id=food_location_for(agent_state),
@@ -174,16 +191,37 @@ def choose_candidate_actions(agent_state: AgentState, primary_goal: str) -> list
                 ),
             ]
         )
-    elif primary_goal == "help_other":
+    elif primary_goal == "heal":
         candidate_actions.append(
             CandidateAction(
-                action_type="help",
-                target_id=highest_priority_sender(agent_state),
-                location_id=None,
-                score=78,
-                reason="A social request needs attention.",
+                action_type="heal",
+                target_id=agent_state.npc_id,
+                location_id=agent_state.location_id,
+                score=82,
+                reason="Health pressure requires treatment.",
             )
         )
+    elif primary_goal == "help_other":
+        if profession_value(agent_state) == "physician":
+            candidate_actions.append(
+                CandidateAction(
+                    action_type="heal",
+                    target_id=highest_priority_sender(agent_state),
+                    location_id=agent_state.location_id,
+                    score=78,
+                    reason="Medical skill is useful for aid.",
+                )
+            )
+        else:
+            candidate_actions.append(
+                CandidateAction(
+                    action_type="help",
+                    target_id=highest_priority_sender(agent_state),
+                    location_id=None,
+                    score=78,
+                    reason="A social request needs attention.",
+                )
+            )
     elif primary_goal == "investigate":
         candidate_actions.append(
             CandidateAction(
@@ -224,12 +262,23 @@ def choose_candidate_actions(agent_state: AgentState, primary_goal: str) -> list
                     reason="Trading fits the current role.",
                 )
         )
+    elif primary_goal == "produce":
+        profession = profession_value(agent_state)
+        candidate_actions.append(
+            CandidateAction(
+                action_type="plant" if profession == "farmer" else "forge",
+                target_id=None,
+                location_id=role_home_location(agent_state),
+                score=74,
+                reason="Production work fits the current profession.",
+            )
+        )
     elif primary_goal == "hunt":
         candidate_actions.append(
             CandidateAction(
                 action_type="hunt",
                 target_id=None,
-                location_id="forest_edge",
+                    location_id=agent_state.location_id if identity_value(agent_state) == "monster" else "forest_edge",
                 score=72,
                 reason="Hunting fits the current role.",
             )
@@ -390,19 +439,48 @@ def best_relationship_target(agent_state: AgentState) -> str | None:
 
 
 def food_location_for(agent_state: AgentState) -> str:
-    if agent_state.role == "merchant":
+    if profession_value(agent_state) == "farmer":
+        return "village_square"
+    if profession_value(agent_state) == "merchant":
         return "market"
     return "forest_edge"
 
 
 def role_home_location(agent_state: AgentState) -> str:
-    if agent_state.role == "merchant":
+    profession = profession_value(agent_state)
+    if profession == "merchant":
         return "market"
-    if agent_state.role == "guard":
+    if profession == "guard":
         return "village_gate"
-    if agent_state.role == "hunter":
+    if profession == "hunter":
         return "forest_edge"
+    if profession in {"farmer", "blacksmith", "physician", "village_chief"}:
+        return "village_square"
     return agent_state.location_id
+
+
+def identity_value(agent_state: AgentState) -> str:
+    identity = getattr(agent_state.identity, "value", str(agent_state.identity))
+    if identity != "civilian":
+        return identity
+    role = getattr(agent_state.role, "value", str(agent_state.role))
+    return {
+        "guard": "warrior",
+        "hunter": "warrior",
+        "merchant": "merchant",
+        "farmer": "producer",
+        "blacksmith": "producer",
+        "physician": "physician",
+        "village_chief": "official",
+        "monster": "monster",
+    }.get(role, identity)
+
+
+def profession_value(agent_state: AgentState) -> str:
+    if agent_state.profession != "villager":
+        return agent_state.profession.split(":", 1)[0]
+    role = getattr(agent_state.role, "value", str(agent_state.role))
+    return role if role in {"guard", "hunter", "merchant", "farmer", "blacksmith", "physician", "village_chief", "monster"} else agent_state.profession
 
 
 def dedupe_actions(candidate_actions: list[CandidateAction]) -> list[CandidateAction]:

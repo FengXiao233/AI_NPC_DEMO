@@ -1,0 +1,100 @@
+{
+  "npc_id": "npc_village_chief_001",
+  "name": "Orlen",
+  "role": "village_chief",
+  "location_id": "village_square",
+  "base_attributes": {
+    "strength": 4,
+    "endurance": 5,
+    "technique": 4,
+    "logic": 8,
+    "perception": 7,
+    "influence": 8
+  },
+  "personality": {
+    "bravery": 5,
+    "kindness": 6,
+    "prudence": 8,
+    "greed": 3,
+    "curiosity": 5,
+    "empathy": 6,
+    "discipline": 8,
+    "conformity": 7,
+    "ambition": 6,
+    "loyalty": 8,
+    "aggression": 2,
+    "patience": 6
+  },
+  "needs": {
+    "energy": 70,
+    "hunger": 46,
+    "health": 92,
+    "safety": 76,
+    "social": 52
+  },
+  "relationships": [
+    {
+      "target_id": "npc_guard_001",
+      "favor": 12,
+      "trust": 18,
+      "hostility": 0
+    },
+    {
+      "target_id": "npc_merchant_001",
+      "favor": 8,
+      "trust": 12,
+      "hostility": 0
+    },
+    {
+      "target_id": "npc_farmer_001",
+      "favor": 8,
+      "trust": 12,
+      "hostility": 0
+    },
+    {
+      "target_id": "npc_blacksmith_001",
+      "favor": 5,
+      "trust": 11,
+      "hostility": 0
+    },
+    {
+      "target_id": "npc_physician_001",
+      "favor": 7,
+      "trust": 13,
+      "hostility": 0
+    }
+  ],
+  "current_task": {
+    "task_type": "patrol",
+    "target_id": null,
+    "location_id": "village_square",
+    "priority": 50,
+    "interruptible": true
+  },
+  "task_queue": [],
+  "message_queue": [],
+  "memory_summary": [
+    {
+      "memory_id": "mem_village_chief_001",
+      "summary": "The chief watches the shared warehouse because hunger can destabilize the village.",
+      "importance": 68,
+      "related_ids": [
+        "village_warehouse",
+        "food_shortage"
+      ],
+      "created_at_tick": 100
+    }
+  ],
+  "learning_bias": {
+    "risk_preference_delta": -5,
+    "cooperation_bias_delta": 18,
+    "combat_confidence_delta": -5
+  },
+  "runtime_flags": {
+    "is_critical_npc": true,
+    "priority_tier": "high",
+    "thought_cooldown_ticks": 20,
+    "last_thought_tick": 0,
+    "last_plan_tick": 0
+  }
+}

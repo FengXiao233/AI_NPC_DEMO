@@ -101,7 +101,7 @@ def test_merchant_food_and_trade_actions_stay_in_market() -> None:
 
     food_thought = build_fallback_thought(agent_state)
     assert food_thought.primary_goal == "get_food"
-    assert food_thought.candidate_actions[0].action_type == "gather"
+    assert food_thought.candidate_actions[0].action_type == "eat"
     assert food_thought.candidate_actions[0].location_id == "market"
 
     agent_state.needs.hunger = 30

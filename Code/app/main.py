@@ -4,16 +4,39 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 
 from app.action_planner import ActionPlanResult, plan_next_action_for_npc
+from app.dialogue_history import load_dialogue_history
 from app.dialogue_processor import PlayerUtteranceRequest, PlayerUtteranceResult, receive_player_utterance
 from app.event_catalog import list_event_catalog_entries
+from app.simulation_engine import SimulationBusyError, get_default_simulation_engine
 from app.event_processor import EventProcessingResult, process_world_event
 from app.memory_summarizer import WorldEvent
-from app.models import AgentState, EventCatalogEntry, StoredEventRecord, StoredMemoryRecord, StoredNpcBeliefRecord, StrictSchemaModel, ThoughtResult
-from app.simulation_tick import SimulationTickRequest, SimulationTickResult, run_simulation_tick
+from app.models import (
+    AgentState,
+    DialogueHistoryRecord,
+    EventCatalogEntry,
+    ProductionOrder,
+    StoredEventRecord,
+    StoredInventoryItem,
+    StoredMemoryRecord,
+    StoredNpcBeliefRecord,
+    StrictSchemaModel,
+    ThoughtResult,
+    WarehouseItem,
+    WarehouseTransaction,
+    WorldEntity,
+    WorldResourceNode,
+)
+from app.simulation_tick import SimulationTickRequest, SimulationTickResult
 from app.state_repository import (
     list_event_records,
+    list_inventory_records,
+    list_production_orders,
+    list_warehouse_records,
+    list_warehouse_transactions,
     list_belief_records,
     list_memory_records,
+    list_world_entities,
+    list_world_resource_nodes,
     load_agent_state,
     load_all_agent_states,
 )
@@ -199,6 +222,106 @@ def list_npc_beliefs(
         )
 
 
+@app.get("/npcs/{npc_id}/inventory", response_model=list[StoredInventoryItem])
+def list_npc_inventory(npc_id: str) -> list[StoredInventoryItem]:
+    test_connection = getattr(app.state, "db_connection", None)
+    if test_connection is not None:
+        agent_state = load_agent_state(test_connection, npc_id)
+        if agent_state is None:
+            raise HTTPException(status_code=404, detail=f"NPC not found: {npc_id}")
+        return list_inventory_records(test_connection, npc_id)
+
+    db_path = get_db_path()
+    ensure_runtime_database(db_path)
+    with sqlite3.connect(db_path) as connection:
+        agent_state = load_agent_state(connection, npc_id)
+        if agent_state is None:
+            raise HTTPException(status_code=404, detail=f"NPC not found: {npc_id}")
+        return list_inventory_records(connection, npc_id)
+
+
+@app.get("/world/resources", response_model=list[WorldResourceNode])
+def list_world_resources(location_id: str | None = None) -> list[WorldResourceNode]:
+    test_connection = getattr(app.state, "db_connection", None)
+    if test_connection is not None:
+        return list_world_resource_nodes(test_connection, location_id=location_id, include_depleted=True)
+
+    db_path = get_db_path()
+    ensure_runtime_database(db_path)
+    with sqlite3.connect(db_path) as connection:
+        return list_world_resource_nodes(connection, location_id=location_id, include_depleted=True)
+
+
+@app.get("/village/warehouse", response_model=list[WarehouseItem])
+def list_village_warehouse() -> list[WarehouseItem]:
+    test_connection = getattr(app.state, "db_connection", None)
+    if test_connection is not None:
+        return list_warehouse_records(test_connection)
+
+    db_path = get_db_path()
+    ensure_runtime_database(db_path)
+    with sqlite3.connect(db_path) as connection:
+        return list_warehouse_records(connection)
+
+
+@app.get("/village/warehouse/transactions", response_model=list[WarehouseTransaction])
+def list_village_warehouse_transactions(limit: int = Query(default=50, ge=1, le=200)) -> list[WarehouseTransaction]:
+    test_connection = getattr(app.state, "db_connection", None)
+    if test_connection is not None:
+        return list_warehouse_transactions(test_connection, limit=limit)
+
+    db_path = get_db_path()
+    ensure_runtime_database(db_path)
+    with sqlite3.connect(db_path) as connection:
+        return list_warehouse_transactions(connection, limit=limit)
+
+
+@app.get("/village/production-orders", response_model=list[ProductionOrder])
+def list_village_production_orders(include_completed: bool = False) -> list[ProductionOrder]:
+    test_connection = getattr(app.state, "db_connection", None)
+    if test_connection is not None:
+        return list_production_orders(test_connection, include_completed=include_completed)
+
+    db_path = get_db_path()
+    ensure_runtime_database(db_path)
+    with sqlite3.connect(db_path) as connection:
+        return list_production_orders(connection, include_completed=include_completed)
+
+
+@app.get("/world/entities", response_model=list[WorldEntity])
+def list_world_dynamic_entities(location_id: str | None = None) -> list[WorldEntity]:
+    test_connection = getattr(app.state, "db_connection", None)
+    if test_connection is not None:
+        return list_world_entities(test_connection, location_id=location_id, include_inactive=False)
+
+    db_path = get_db_path()
+    ensure_runtime_database(db_path)
+    with sqlite3.connect(db_path) as connection:
+        return list_world_entities(connection, location_id=location_id, include_inactive=False)
+
+
+@app.get("/npcs/{npc_id}/dialogue-history", response_model=DialogueHistoryRecord)
+def get_npc_dialogue_history(
+    npc_id: str,
+    speaker_id: str = Query(default="player_001"),
+    recent_turn_limit: int = Query(default=6, ge=2, le=10),
+) -> DialogueHistoryRecord:
+    test_connection = getattr(app.state, "db_connection", None)
+    if test_connection is not None:
+        agent_state = load_agent_state(test_connection, npc_id)
+        if agent_state is None:
+            raise HTTPException(status_code=404, detail=f"NPC not found: {npc_id}")
+        return load_dialogue_history(test_connection, npc_id, speaker_id, recent_turn_limit=recent_turn_limit)
+
+    db_path = get_db_path()
+    ensure_runtime_database(db_path)
+    with sqlite3.connect(db_path) as connection:
+        agent_state = load_agent_state(connection, npc_id)
+        if agent_state is None:
+            raise HTTPException(status_code=404, detail=f"NPC not found: {npc_id}")
+        return load_dialogue_history(connection, npc_id, speaker_id, recent_turn_limit=recent_turn_limit)
+
+
 @app.get("/npcs/{npc_id}/thought", response_model=ThoughtResult)
 def thought_for_npc(npc_id: str) -> ThoughtResult:
     test_connection = getattr(app.state, "db_connection", None)
@@ -249,11 +372,22 @@ def execute_task_for_npc(npc_id: str) -> TaskExecutionResult:
 
 @app.post("/simulation/tick", response_model=SimulationTickResult)
 def simulation_tick(request: SimulationTickRequest) -> SimulationTickResult:
+    engine = get_default_simulation_engine()
     test_connection = getattr(app.state, "db_connection", None)
-    if test_connection is not None:
-        return run_simulation_tick(test_connection, request)
+    try:
+        if test_connection is not None:
+            return engine.run_tick(test_connection, request)
 
-    db_path = get_db_path()
-    ensure_runtime_database(db_path)
-    with sqlite3.connect(db_path) as connection:
-        return run_simulation_tick(connection, request)
+        db_path = get_db_path()
+        ensure_runtime_database(db_path)
+        with sqlite3.connect(db_path) as connection:
+            return engine.run_tick(connection, request)
+    except SimulationBusyError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "status": "busy",
+                "current_mode": engine.runtime_config.tick_reentry_mode,
+                "message": str(exc),
+            },
+        ) from exc

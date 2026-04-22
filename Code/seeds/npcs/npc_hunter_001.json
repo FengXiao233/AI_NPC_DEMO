@@ -5,6 +5,7 @@
   "location_id": "forest_edge",
   "base_attributes": {
     "strength": 6,
+    "endurance": 6,
     "technique": 7,
     "logic": 4,
     "perception": 8,
@@ -15,11 +16,19 @@
     "kindness": 4,
     "prudence": 5,
     "greed": 3,
-    "curiosity": 6
+    "curiosity": 6,
+    "empathy": 3,
+    "discipline": 5,
+    "conformity": 3,
+    "ambition": 5,
+    "loyalty": 5,
+    "aggression": 5,
+    "patience": 5
   },
   "needs": {
     "energy": 58,
     "hunger": 68,
+    "health": 88,
     "safety": 62,
     "social": 25
   },
@@ -82,8 +91,10 @@
     "combat_confidence_delta": 8
   },
   "runtime_flags": {
-    "is_critical_npc": false,
+    "is_critical_npc": true,
+    "priority_tier": "high",
     "thought_cooldown_ticks": 20,
-    "last_thought_tick": 100
+    "last_thought_tick": 100,
+    "last_plan_tick": 100
   }
 }

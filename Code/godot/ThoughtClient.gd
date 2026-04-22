@@ -23,6 +23,20 @@ signal npc_memories_received(npc_id: String, memories: Array)
 signal npc_memories_failed(status_code: int, message: String)
 signal npc_beliefs_received(npc_id: String, beliefs: Array)
 signal npc_beliefs_failed(status_code: int, message: String)
+signal npc_inventory_received(npc_id: String, inventory: Array)
+signal npc_inventory_failed(status_code: int, message: String)
+signal village_warehouse_received(items: Array)
+signal village_warehouse_failed(status_code: int, message: String)
+signal warehouse_transactions_received(transactions: Array)
+signal warehouse_transactions_failed(status_code: int, message: String)
+signal production_orders_received(orders: Array)
+signal production_orders_failed(status_code: int, message: String)
+signal dialogue_history_received(npc_id: String, history: Dictionary)
+signal dialogue_history_failed(status_code: int, message: String)
+signal world_resources_received(resources: Array)
+signal world_resources_failed(status_code: int, message: String)
+signal world_entities_received(entities: Array)
+signal world_entities_failed(status_code: int, message: String)
 signal world_reset(result: Dictionary)
 signal world_reset_failed(status_code: int, message: String)
 signal player_utterance_received(result: Dictionary)
@@ -41,10 +55,19 @@ var _event_catalog_request: HTTPRequest
 var _event_log_request: HTTPRequest
 var _npc_memories_request: HTTPRequest
 var _npc_beliefs_request: HTTPRequest
+var _npc_inventory_request: HTTPRequest
+var _village_warehouse_request: HTTPRequest
+var _warehouse_transactions_request: HTTPRequest
+var _production_orders_request: HTTPRequest
+var _dialogue_history_request: HTTPRequest
+var _world_resources_request: HTTPRequest
+var _world_entities_request: HTTPRequest
 var _reset_world_request: HTTPRequest
 var _player_utterance_request: HTTPRequest
 var _pending_memory_npc_id: String = ""
 var _pending_belief_npc_id: String = ""
+var _pending_inventory_npc_id: String = ""
+var _pending_dialogue_history_npc_id: String = ""
 
 
 func _ready() -> void:
@@ -59,6 +82,13 @@ func _ready() -> void:
 	_event_log_request = HTTPRequest.new()
 	_npc_memories_request = HTTPRequest.new()
 	_npc_beliefs_request = HTTPRequest.new()
+	_npc_inventory_request = HTTPRequest.new()
+	_village_warehouse_request = HTTPRequest.new()
+	_warehouse_transactions_request = HTTPRequest.new()
+	_production_orders_request = HTTPRequest.new()
+	_dialogue_history_request = HTTPRequest.new()
+	_world_resources_request = HTTPRequest.new()
+	_world_entities_request = HTTPRequest.new()
 	_reset_world_request = HTTPRequest.new()
 	_player_utterance_request = HTTPRequest.new()
 	add_child(_thought_request)
@@ -72,6 +102,13 @@ func _ready() -> void:
 	add_child(_event_log_request)
 	add_child(_npc_memories_request)
 	add_child(_npc_beliefs_request)
+	add_child(_npc_inventory_request)
+	add_child(_village_warehouse_request)
+	add_child(_warehouse_transactions_request)
+	add_child(_production_orders_request)
+	add_child(_dialogue_history_request)
+	add_child(_world_resources_request)
+	add_child(_world_entities_request)
 	add_child(_reset_world_request)
 	add_child(_player_utterance_request)
 	_thought_request.request_completed.connect(_on_thought_request_completed)
@@ -85,6 +122,13 @@ func _ready() -> void:
 	_event_log_request.request_completed.connect(_on_event_log_request_completed)
 	_npc_memories_request.request_completed.connect(_on_npc_memories_request_completed)
 	_npc_beliefs_request.request_completed.connect(_on_npc_beliefs_request_completed)
+	_npc_inventory_request.request_completed.connect(_on_npc_inventory_request_completed)
+	_village_warehouse_request.request_completed.connect(_on_village_warehouse_request_completed)
+	_warehouse_transactions_request.request_completed.connect(_on_warehouse_transactions_request_completed)
+	_production_orders_request.request_completed.connect(_on_production_orders_request_completed)
+	_dialogue_history_request.request_completed.connect(_on_dialogue_history_request_completed)
+	_world_resources_request.request_completed.connect(_on_world_resources_request_completed)
+	_world_entities_request.request_completed.connect(_on_world_entities_request_completed)
 	_reset_world_request.request_completed.connect(_on_reset_world_request_completed)
 	_player_utterance_request.request_completed.connect(_on_player_utterance_request_completed)
 
@@ -141,6 +185,50 @@ func request_npc_beliefs(npc_id: String, include_expired: bool = false, limit: i
 	)
 
 
+func request_npc_inventory(npc_id: String) -> Error:
+	_pending_inventory_npc_id = npc_id
+	return _npc_inventory_request.request("%s/npcs/%s/inventory" % [service_base_url, npc_id])
+
+
+func request_village_warehouse() -> Error:
+	return _village_warehouse_request.request("%s/village/warehouse" % service_base_url)
+
+
+func request_warehouse_transactions(limit: int = 8) -> Error:
+	return _warehouse_transactions_request.request("%s/village/warehouse/transactions?limit=%d" % [service_base_url, limit])
+
+
+func request_production_orders(include_completed: bool = false) -> Error:
+	var completed_flag := "true" if include_completed else "false"
+	return _production_orders_request.request("%s/village/production-orders?include_completed=%s" % [service_base_url, completed_flag])
+
+
+func request_dialogue_history(npc_id: String, speaker_id: String = "player_001", recent_turn_limit: int = 6) -> Error:
+	_pending_dialogue_history_npc_id = npc_id
+	return _dialogue_history_request.request(
+		"%s/npcs/%s/dialogue-history?speaker_id=%s&recent_turn_limit=%d" % [
+			service_base_url,
+			npc_id,
+			speaker_id,
+			recent_turn_limit,
+		]
+	)
+
+
+func request_world_resources(location_id: String = "") -> Error:
+	var url := "%s/world/resources" % service_base_url
+	if location_id != "":
+		url += "?location_id=%s" % location_id
+	return _world_resources_request.request(url)
+
+
+func request_world_entities(location_id: String = "") -> Error:
+	var url := "%s/world/entities" % service_base_url
+	if location_id != "":
+		url += "?location_id=%s" % location_id
+	return _world_entities_request.request(url)
+
+
 func reset_world_state() -> Error:
 	return _reset_world_request.request("%s/debug/reset" % service_base_url, [], HTTPClient.METHOD_POST)
 
@@ -174,10 +262,12 @@ func execute_current_task_for_npc(npc_id: String) -> Error:
 	return _execute_task_request.request("%s/npcs/%s/execute-task" % [service_base_url, npc_id], [], HTTPClient.METHOD_POST)
 
 
-func run_simulation_tick(current_tick: int, npc_ids: Array[String] = []) -> Error:
+func run_simulation_tick(current_tick: int, npc_ids: Array[String] = [], enable_world_updates: bool = true) -> Error:
 	var body := JSON.stringify({
 		"current_tick": current_tick,
 		"npc_ids": npc_ids,
+		"include_profile": true,
+		"enable_world_updates": enable_world_updates,
 	})
 	var headers := ["Content-Type: application/json"]
 	return _simulation_tick_request.request("%s/simulation/tick" % service_base_url, headers, HTTPClient.METHOD_POST, body)
@@ -284,6 +374,69 @@ func _on_npc_beliefs_request_completed(_result: int, response_code: int, _header
 		return
 
 	npc_beliefs_received.emit(_pending_belief_npc_id, parsed)
+
+
+func _on_npc_inventory_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if response_code < 200 or response_code >= 300 or typeof(parsed) != TYPE_ARRAY:
+		npc_inventory_failed.emit(response_code, body.get_string_from_utf8())
+		return
+
+	npc_inventory_received.emit(_pending_inventory_npc_id, parsed)
+
+
+func _on_village_warehouse_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if response_code < 200 or response_code >= 300 or typeof(parsed) != TYPE_ARRAY:
+		village_warehouse_failed.emit(response_code, body.get_string_from_utf8())
+		return
+
+	village_warehouse_received.emit(parsed)
+
+
+func _on_warehouse_transactions_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if response_code < 200 or response_code >= 300 or typeof(parsed) != TYPE_ARRAY:
+		warehouse_transactions_failed.emit(response_code, body.get_string_from_utf8())
+		return
+
+	warehouse_transactions_received.emit(parsed)
+
+
+func _on_production_orders_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if response_code < 200 or response_code >= 300 or typeof(parsed) != TYPE_ARRAY:
+		production_orders_failed.emit(response_code, body.get_string_from_utf8())
+		return
+
+	production_orders_received.emit(parsed)
+
+
+func _on_dialogue_history_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if response_code < 200 or response_code >= 300 or typeof(parsed) != TYPE_DICTIONARY:
+		dialogue_history_failed.emit(response_code, body.get_string_from_utf8())
+		return
+
+	dialogue_history_received.emit(_pending_dialogue_history_npc_id, parsed)
+
+
+func _on_world_resources_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if response_code < 200 or response_code >= 300 or typeof(parsed) != TYPE_ARRAY:
+		world_resources_failed.emit(response_code, body.get_string_from_utf8())
+		return
+
+	world_resources_received.emit(parsed)
+
+
+func _on_world_entities_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	var parsed = JSON.parse_string(body.get_string_from_utf8())
+	if response_code < 200 or response_code >= 300 or typeof(parsed) != TYPE_ARRAY:
+		world_entities_failed.emit(response_code, body.get_string_from_utf8())
+		return
+
+	world_entities_received.emit(parsed)
 
 
 func _on_reset_world_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:

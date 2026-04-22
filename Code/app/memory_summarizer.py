@@ -102,4 +102,14 @@ def render_event_summary(event: WorldEvent) -> str:
 
 def calculate_expires_at_tick(event: WorldEvent, importance: int) -> int:
     base_lifetime = get_event_definition(event.event_type).memory_lifetime
-    return event.created_at_tick + base_lifetime + importance * 5
+    return event.created_at_tick + base_lifetime + importance * memory_retention_multiplier(event, importance)
+
+
+def memory_retention_multiplier(event: WorldEvent, importance: int) -> int:
+    if event.importance >= 75 or importance >= 90:
+        return 12
+    if event.importance >= 55 or importance >= 75:
+        return 8
+    if event.importance >= 35 or importance >= 55:
+        return 5
+    return 3

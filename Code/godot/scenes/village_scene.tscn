@@ -1,146 +1,504 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/VillageScene.gd" id="1_village"]
+
+[sub_resource type="StyleBoxFlat" id="1"]
+bg_color = Color(0.109804, 0.12549, 0.156863, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.658824, 0.701961, 0.788235, 0.35)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="2"]
+bg_color = Color(0.0745098, 0.0901961, 0.117647, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.870588, 0.772549, 0.494118, 0.35)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="3"]
+bg_color = Color(0.133333, 0.14902, 0.184314, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.721569, 0.741176, 0.788235, 0.18)
 
 [node name="VillageScene" type="Node2D"]
 script = ExtResource("1_village")
 
+[node name="Sky" type="ColorRect" parent="."]
+offset_right = 1344.0
+offset_bottom = 390.0
+color = Color(0.372549, 0.623529, 0.776471, 1)
+
+[node name="FarHills" type="Polygon2D" parent="."]
+color = Color(0.27451, 0.490196, 0.462745, 1)
+polygon = PackedVector2Array(0, 366, 0, 258, 180, 286, 300, 230, 470, 304, 646, 214, 816, 292, 1000, 234, 1170, 294, 1344, 250, 1344, 366)
+
+[node name="NearHills" type="Polygon2D" parent="."]
+color = Color(0.219608, 0.411765, 0.317647, 1)
+polygon = PackedVector2Array(0, 420, 0, 304, 140, 334, 280, 278, 430, 350, 588, 294, 742, 360, 934, 284, 1110, 344, 1344, 286, 1344, 420)
+
 [node name="Ground" type="ColorRect" parent="."]
 unique_name_in_owner = true
-offset_right = 1280.0
-offset_bottom = 720.0
+offset_top = 350.0
+offset_right = 1344.0
+offset_bottom = 1080.0
 color = Color(0.188235, 0.294118, 0.196078, 1)
 
+[node name="GrassBand" type="ColorRect" parent="."]
+offset_top = 350.0
+offset_right = 1344.0
+offset_bottom = 450.0
+color = Color(0.27451, 0.435294, 0.223529, 0.85)
+
+[node name="RoadShadow" type="ColorRect" parent="."]
+offset_left = 108.0
+offset_top = 452.0
+offset_right = 1236.0
+offset_bottom = 594.0
+color = Color(0.145098, 0.14902, 0.152941, 0.45)
+
 [node name="Road" type="ColorRect" parent="."]
-offset_left = 80.0
-offset_top = 320.0
-offset_right = 1200.0
-offset_bottom = 410.0
+offset_left = 110.0
+offset_top = 450.0
+offset_right = 1230.0
+offset_bottom = 585.0
 color = Color(0.329412, 0.329412, 0.329412, 1)
 
+[node name="RoadStripeA" type="ColorRect" parent="."]
+offset_left = 170.0
+offset_top = 514.0
+offset_right = 250.0
+offset_bottom = 522.0
+color = Color(0.92549, 0.847059, 0.560784, 0.75)
+
+[node name="RoadStripeB" type="ColorRect" parent="."]
+offset_left = 310.0
+offset_top = 514.0
+offset_right = 390.0
+offset_bottom = 522.0
+color = Color(0.92549, 0.847059, 0.560784, 0.75)
+
+[node name="RoadStripeC" type="ColorRect" parent="."]
+offset_left = 450.0
+offset_top = 514.0
+offset_right = 530.0
+offset_bottom = 522.0
+color = Color(0.92549, 0.847059, 0.560784, 0.75)
+
+[node name="RoadStripeD" type="ColorRect" parent="."]
+offset_left = 590.0
+offset_top = 514.0
+offset_right = 670.0
+offset_bottom = 522.0
+color = Color(0.92549, 0.847059, 0.560784, 0.75)
+
+[node name="RoadStripeE" type="ColorRect" parent="."]
+offset_left = 730.0
+offset_top = 514.0
+offset_right = 810.0
+offset_bottom = 522.0
+color = Color(0.92549, 0.847059, 0.560784, 0.75)
+
+[node name="RoadStripeF" type="ColorRect" parent="."]
+offset_left = 870.0
+offset_top = 514.0
+offset_right = 950.0
+offset_bottom = 522.0
+color = Color(0.92549, 0.847059, 0.560784, 0.75)
+
+[node name="RoadStripeG" type="ColorRect" parent="."]
+offset_left = 1010.0
+offset_top = 514.0
+offset_right = 1090.0
+offset_bottom = 522.0
+color = Color(0.92549, 0.847059, 0.560784, 0.75)
+
+[node name="RoadStripeH" type="ColorRect" parent="."]
+offset_left = 1150.0
+offset_top = 514.0
+offset_right = 1230.0
+offset_bottom = 522.0
+color = Color(0.92549, 0.847059, 0.560784, 0.75)
+
+[node name="PathToInn" type="ColorRect" parent="."]
+offset_left = 642.0
+offset_top = 585.0
+offset_right = 718.0
+offset_bottom = 808.0
+color = Color(0.54902, 0.470588, 0.360784, 0.9)
+
+[node name="MarketZoneShadow" type="ColorRect" parent="."]
+offset_left = 540.0
+offset_top = 320.0
+offset_right = 820.0
+offset_bottom = 730.0
+color = Color(0.0588235, 0.0941176, 0.121569, 0.25)
+
 [node name="MarketZone" type="ColorRect" parent="."]
-offset_left = 520.0
-offset_top = 210.0
-offset_right = 760.0
-offset_bottom = 510.0
-color = Color(0.247059, 0.411765, 0.45098, 1)
+offset_left = 545.0
+offset_top = 315.0
+offset_right = 815.0
+offset_bottom = 725.0
+color = Color(0.247059, 0.411765, 0.45098, 0.92)
+
+[node name="GateZoneShadow" type="ColorRect" parent="."]
+offset_left = 145.0
+offset_top = 335.0
+offset_right = 395.0
+offset_bottom = 715.0
+color = Color(0.0588235, 0.0941176, 0.121569, 0.25)
 
 [node name="GateZone" type="ColorRect" parent="."]
 offset_left = 150.0
-offset_top = 220.0
-offset_right = 370.0
-offset_bottom = 500.0
-color = Color(0.396078, 0.360784, 0.286275, 1)
+offset_top = 330.0
+offset_right = 390.0
+offset_bottom = 710.0
+color = Color(0.396078, 0.360784, 0.286275, 0.92)
+
+[node name="ForestZoneShadow" type="ColorRect" parent="."]
+offset_left = 950.0
+offset_top = 305.0
+offset_right = 1200.0
+offset_bottom = 740.0
+color = Color(0.0588235, 0.0941176, 0.121569, 0.25)
 
 [node name="ForestZone" type="ColorRect" parent="."]
-offset_left = 900.0
-offset_top = 185.0
-offset_right = 1140.0
-offset_bottom = 525.0
-color = Color(0.137255, 0.360784, 0.211765, 1)
+offset_left = 955.0
+offset_top = 300.0
+offset_right = 1195.0
+offset_bottom = 735.0
+color = Color(0.137255, 0.360784, 0.211765, 0.94)
+
+[node name="InnZoneShadow" type="ColorRect" parent="."]
+offset_left = 515.0
+offset_top = 735.0
+offset_right = 835.0
+offset_bottom = 935.0
+color = Color(0.0588235, 0.0941176, 0.121569, 0.25)
 
 [node name="InnZone" type="ColorRect" parent="."]
-offset_left = 500.0
-offset_top = 540.0
-offset_right = 780.0
-offset_bottom = 680.0
-color = Color(0.329412, 0.243137, 0.184314, 1)
+offset_left = 520.0
+offset_top = 730.0
+offset_right = 830.0
+offset_bottom = 930.0
+color = Color(0.329412, 0.243137, 0.184314, 0.96)
+
+[node name="GateTowerBase" type="ColorRect" parent="."]
+offset_left = 172.0
+offset_top = 348.0
+offset_right = 244.0
+offset_bottom = 444.0
+color = Color(0.564706, 0.541176, 0.494118, 1)
+
+[node name="GateTowerRoof" type="Polygon2D" parent="."]
+color = Color(0.443137, 0.278431, 0.219608, 1)
+polygon = PackedVector2Array(158, 352, 208, 314, 258, 352)
+
+[node name="GateWall" type="ColorRect" parent="."]
+offset_left = 248.0
+offset_top = 374.0
+offset_right = 380.0
+offset_bottom = 430.0
+color = Color(0.596078, 0.572549, 0.529412, 1)
+
+[node name="GateBanner" type="ColorRect" parent="."]
+offset_left = 297.0
+offset_top = 356.0
+offset_right = 331.0
+offset_bottom = 410.0
+color = Color(0.847059, 0.317647, 0.243137, 0.95)
+
+[node name="MarketStallLeft" type="ColorRect" parent="."]
+offset_left = 568.0
+offset_top = 372.0
+offset_right = 648.0
+offset_bottom = 430.0
+color = Color(0.588235, 0.462745, 0.298039, 1)
+
+[node name="MarketCanopyLeft" type="Polygon2D" parent="."]
+color = Color(0.760784, 0.286275, 0.278431, 0.95)
+polygon = PackedVector2Array(552, 374, 608, 336, 664, 374)
+
+[node name="MarketStallMid" type="ColorRect" parent="."]
+offset_left = 660.0
+offset_top = 368.0
+offset_right = 742.0
+offset_bottom = 430.0
+color = Color(0.560784, 0.439216, 0.278431, 1)
+
+[node name="MarketCanopyMid" type="Polygon2D" parent="."]
+color = Color(0.92549, 0.772549, 0.32549, 0.96)
+polygon = PackedVector2Array(642, 370, 701, 332, 760, 370)
+
+[node name="MarketStallRight" type="ColorRect" parent="."]
+offset_left = 758.0
+offset_top = 382.0
+offset_right = 804.0
+offset_bottom = 430.0
+color = Color(0.580392, 0.454902, 0.286275, 1)
+
+[node name="MarketCanopyRight" type="Polygon2D" parent="."]
+color = Color(0.905882, 0.509804, 0.258824, 0.96)
+polygon = PackedVector2Array(744, 384, 781, 354, 818, 384)
+
+[node name="InnBuilding" type="ColorRect" parent="."]
+offset_left = 570.0
+offset_top = 760.0
+offset_right = 790.0
+offset_bottom = 900.0
+color = Color(0.694118, 0.607843, 0.470588, 1)
+
+[node name="InnRoof" type="Polygon2D" parent="."]
+color = Color(0.482353, 0.266667, 0.192157, 1)
+polygon = PackedVector2Array(548, 770, 680, 700, 812, 770)
+
+[node name="InnWindowLeft" type="ColorRect" parent="."]
+offset_left = 614.0
+offset_top = 808.0
+offset_right = 654.0
+offset_bottom = 852.0
+color = Color(0.984314, 0.843137, 0.462745, 0.92)
+
+[node name="InnWindowRight" type="ColorRect" parent="."]
+offset_left = 706.0
+offset_top = 808.0
+offset_right = 746.0
+offset_bottom = 852.0
+color = Color(0.984314, 0.843137, 0.462745, 0.92)
+
+[node name="InnDoor" type="ColorRect" parent="."]
+offset_left = 664.0
+offset_top = 830.0
+offset_right = 696.0
+offset_bottom = 900.0
+color = Color(0.27451, 0.188235, 0.141176, 1)
+
+[node name="PineTrunkA" type="ColorRect" parent="."]
+offset_left = 1010.0
+offset_top = 430.0
+offset_right = 1024.0
+offset_bottom = 530.0
+color = Color(0.34902, 0.227451, 0.156863, 1)
+
+[node name="PineCrownA" type="Polygon2D" parent="."]
+color = Color(0.113725, 0.286275, 0.176471, 1)
+polygon = PackedVector2Array(978, 462, 1017, 386, 1056, 462)
+
+[node name="PineTrunkB" type="ColorRect" parent="."]
+offset_left = 1090.0
+offset_top = 416.0
+offset_right = 1104.0
+offset_bottom = 536.0
+color = Color(0.34902, 0.227451, 0.156863, 1)
+
+[node name="PineCrownB" type="Polygon2D" parent="."]
+color = Color(0.0941176, 0.258824, 0.160784, 1)
+polygon = PackedVector2Array(1056, 450, 1097, 362, 1138, 450)
+
+[node name="PineTrunkC" type="ColorRect" parent="."]
+offset_left = 1170.0
+offset_top = 448.0
+offset_right = 1182.0
+offset_bottom = 560.0
+color = Color(0.34902, 0.227451, 0.156863, 1)
+
+[node name="PineCrownC" type="Polygon2D" parent="."]
+color = Color(0.121569, 0.317647, 0.188235, 1)
+polygon = PackedVector2Array(1140, 478, 1176, 402, 1212, 478)
+
+[node name="WorldBanner" type="PanelContainer" parent="."]
+offset_left = 26.0
+offset_top = 24.0
+offset_right = 594.0
+offset_bottom = 102.0
+theme_override_styles/panel = SubResource("2")
+
+[node name="WorldBannerVBox" type="VBoxContainer" parent="WorldBanner"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="WorldTitle" type="Label" parent="WorldBanner/WorldBannerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.972549, 0.964706, 0.886275, 1)
+theme_override_font_sizes/font_size = 28
+text = "Village Watch Demo"
+
+[node name="WorldSubtitle" type="Label" parent="WorldBanner/WorldBannerVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.878431, 0.831373, 0.65098, 0.92)
+theme_override_font_sizes/font_size = 16
+text = "Autonomous townsfolk react to speech, beliefs, and world events."
 
 [node name="GateLabel" type="Label" parent="."]
-offset_left = 200.0
-offset_top = 235.0
-offset_right = 340.0
-offset_bottom = 260.0
-text = "村口"
+offset_left = 216.0
+offset_top = 438.0
+offset_right = 334.0
+offset_bottom = 463.0
+theme_override_colors/font_color = Color(0.956863, 0.937255, 0.843137, 1)
+text = "Village Gate"
 
 [node name="MarketLabel" type="Label" parent="."]
-offset_left = 610.0
-offset_top = 225.0
-offset_right = 710.0
-offset_bottom = 250.0
-text = "市场"
+offset_left = 618.0
+offset_top = 438.0
+offset_right = 740.0
+offset_bottom = 463.0
+theme_override_colors/font_color = Color(0.956863, 0.937255, 0.843137, 1)
+text = "Market"
 
 [node name="ForestLabel" type="Label" parent="."]
-offset_left = 970.0
-offset_top = 205.0
-offset_right = 1100.0
-offset_bottom = 230.0
-text = "森林边缘"
+offset_left = 1006.0
+offset_top = 548.0
+offset_right = 1132.0
+offset_bottom = 573.0
+theme_override_colors/font_color = Color(0.956863, 0.937255, 0.843137, 1)
+text = "Forest Edge"
 
 [node name="InnLabel" type="Label" parent="."]
-offset_left = 612.0
-offset_top = 548.0
-offset_right = 712.0
-offset_bottom = 573.0
-text = "旅店"
+offset_left = 648.0
+offset_top = 906.0
+offset_right = 720.0
+offset_bottom = 931.0
+theme_override_colors/font_color = Color(0.956863, 0.937255, 0.843137, 1)
+text = "Inn"
 
 [node name="Player" type="Node2D" parent="."]
 unique_name_in_owner = true
-position = Vector2(640, 500)
+position = Vector2(680, 760)
+
+[node name="Shadow" type="Polygon2D" parent="Player"]
+color = Color(0, 0, 0, 0.2)
+polygon = PackedVector2Array(-20, 10, 0, 16, 20, 10, 0, 4)
 
 [node name="Body" type="Polygon2D" parent="Player"]
 color = Color(0.14902, 0.431373, 0.901961, 1)
 polygon = PackedVector2Array(0, -22, 18, 12, -18, 12)
 
 [node name="Label" type="Label" parent="Player"]
-offset_left = -24.0
-offset_top = 18.0
-offset_right = 42.0
-offset_bottom = 43.0
-text = "玩家"
+offset_left = -30.0
+offset_top = 20.0
+offset_right = 48.0
+offset_bottom = 45.0
+theme_override_colors/font_color = Color(0.972549, 0.964706, 0.886275, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.55)
+theme_override_constants/outline_size = 4
+text = "Player"
 
 [node name="Guard" type="Node2D" parent="."]
 unique_name_in_owner = true
-position = Vector2(260, 360)
+position = Vector2(280, 520)
+
+[node name="Shadow" type="Polygon2D" parent="Guard"]
+color = Color(0, 0, 0, 0.2)
+polygon = PackedVector2Array(-20, 10, 0, 16, 20, 10, 0, 4)
 
 [node name="Body" type="Polygon2D" parent="Guard"]
 color = Color(0.85098, 0.152941, 0.152941, 1)
 polygon = PackedVector2Array(0, -24, 20, 14, -20, 14)
 
 [node name="Label" type="Label" parent="Guard"]
-offset_left = -38.0
-offset_top = 18.0
-offset_right = 60.0
-offset_bottom = 43.0
-text = "守卫"
+offset_left = -30.0
+offset_top = 20.0
+offset_right = 52.0
+offset_bottom = 45.0
+theme_override_colors/font_color = Color(0.972549, 0.964706, 0.886275, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.55)
+theme_override_constants/outline_size = 4
+text = "Guard"
 
 [node name="Merchant" type="Node2D" parent="."]
 unique_name_in_owner = true
-position = Vector2(640, 360)
+position = Vector2(680, 520)
+
+[node name="Shadow" type="Polygon2D" parent="Merchant"]
+color = Color(0, 0, 0, 0.2)
+polygon = PackedVector2Array(-20, 10, 0, 16, 20, 10, 0, 4)
 
 [node name="Body" type="Polygon2D" parent="Merchant"]
 color = Color(0.92549, 0.752941, 0.145098, 1)
 polygon = PackedVector2Array(0, -22, 18, 12, -18, 12)
 
 [node name="Label" type="Label" parent="Merchant"]
-offset_left = -48.0
-offset_top = 18.0
-offset_right = 75.0
-offset_bottom = 43.0
-text = "商人"
+offset_left = -42.0
+offset_top = 20.0
+offset_right = 64.0
+offset_bottom = 45.0
+theme_override_colors/font_color = Color(0.972549, 0.964706, 0.886275, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.55)
+theme_override_constants/outline_size = 4
+text = "Merchant"
 
 [node name="Hunter" type="Node2D" parent="."]
 unique_name_in_owner = true
-position = Vector2(1010, 360)
+position = Vector2(1080, 520)
+
+[node name="Shadow" type="Polygon2D" parent="Hunter"]
+color = Color(0, 0, 0, 0.2)
+polygon = PackedVector2Array(-20, 10, 0, 16, 20, 10, 0, 4)
 
 [node name="Body" type="Polygon2D" parent="Hunter"]
 color = Color(0.117647, 0.690196, 0.34902, 1)
 polygon = PackedVector2Array(0, -22, 18, 12, -18, 12)
 
 [node name="Label" type="Label" parent="Hunter"]
-offset_left = -38.0
-offset_top = 18.0
-offset_right = 60.0
-offset_bottom = 43.0
-text = "猎人"
+offset_left = -30.0
+offset_top = 20.0
+offset_right = 52.0
+offset_bottom = 45.0
+theme_override_colors/font_color = Color(0.972549, 0.964706, 0.886275, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.55)
+theme_override_constants/outline_size = 4
+text = "Hunter"
 
 [node name="UI" type="CanvasLayer" parent="."]
 
+[node name="SidebarBackground" type="ColorRect" parent="UI"]
+offset_left = 1344.0
+offset_top = 0.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.0941176, 0.105882, 0.129412, 0.98)
+
+[node name="SidebarAccent" type="ColorRect" parent="UI"]
+offset_left = 1344.0
+offset_top = 0.0
+offset_right = 1920.0
+offset_bottom = 6.0
+color = Color(0.917647, 0.768627, 0.403922, 0.95)
+
+[node name="Divider" type="ColorRect" parent="UI"]
+offset_left = 1342.0
+offset_top = 0.0
+offset_right = 1346.0
+offset_bottom = 1080.0
+color = Color(0.721569, 0.741176, 0.788235, 0.5)
+
 [node name="Panel" type="PanelContainer" parent="UI"]
-offset_left = 16.0
+offset_left = 1360.0
 offset_top = 16.0
-offset_right = 584.0
-offset_bottom = 380.0
+offset_right = 1904.0
+offset_bottom = 392.0
+theme_override_styles/panel = SubResource("1")
 
 [node name="VBox" type="VBoxContainer" parent="UI/Panel"]
 layout_mode = 2
@@ -153,36 +511,41 @@ theme_override_constants/separation = 12
 [node name="Title" type="Label" parent="UI/Panel/VBox/TitleRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "AI NPC 村庄切片"
+theme_override_colors/font_color = Color(0.972549, 0.964706, 0.886275, 1)
+theme_override_font_sizes/font_size = 24
+text = "村庄观察台"
 
 [node name="TickLabel" type="Label" parent="UI/Panel/VBox/TitleRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Tick: 0"
+theme_override_colors/font_color = Color(0.972549, 0.964706, 0.886275, 1)
+text = "Tick：0"
 
 [node name="StatusLabel" type="Label" parent="UI/Panel/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Starting..."
+theme_override_colors/font_color = Color(0.839216, 0.858824, 0.901961, 1)
+text = "启动中..."
 autowrap_mode = 3
 
 [node name="SelectedLabel" type="Label" parent="UI/Panel/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "附近 NPC: 无"
+theme_override_colors/font_color = Color(0.92549, 0.847059, 0.560784, 1)
+text = "附近 NPC：无"
 
 [node name="DialogueLog" type="RichTextLabel" parent="UI/Panel/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(0, 84)
+custom_minimum_size = Vector2(0, 160)
 bbcode_enabled = true
-scroll_active = false
-text = "连续对话会显示在这里。"
+scroll_active = true
+text = "对话记录"
 
 [node name="SpeechInput" type="LineEdit" parent="UI/Panel/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-placeholder_text = "对附近 NPC 说点什么..."
+placeholder_text = "对附近 NPC 说些什么..."
 
 [node name="ButtonRow" type="HBoxContainer" parent="UI/Panel/VBox"]
 layout_mode = 2
@@ -191,23 +554,48 @@ theme_override_constants/separation = 6
 [node name="SubmitButton" type="Button" parent="UI/Panel/VBox/ButtonRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "提交 / E"
+text = "对话 / E"
 
 [node name="SuspiciousEventButton" type="Button" parent="UI/Panel/VBox/ButtonRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "可疑人物 / O"
+text = "可疑 / O"
 
 [node name="PlanExecuteButton" type="Button" parent="UI/Panel/VBox/ButtonRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "规划并执行 / P"
+text = "规划 / P"
 
 [node name="ResetButton" type="Button" parent="UI/Panel/VBox/ButtonRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "重置 / R"
+
+[node name="TickControlRow" type="HBoxContainer" parent="UI/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="AdvanceTickButton" type="Button" parent="UI/Panel/VBox/TickControlRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "推进 Tick / T"
+
+[node name="AutoTickButton" type="Button" parent="UI/Panel/VBox/TickControlRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "自动推进"
+
+[node name="AutoTickIntervalSpinBox" type="SpinBox" parent="UI/Panel/VBox/TickControlRow"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+min_value = 0.2
+max_value = 5.0
+step = 0.1
+value = 1.0
+suffix = " 秒/Tick"
 
 [node name="EventRow" type="HBoxContainer" parent="UI/Panel/VBox"]
 layout_mode = 2
@@ -217,81 +605,87 @@ theme_override_constants/separation = 6
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Monster at Gate"
+text = "怪物"
 
 [node name="ResourceEventButton" type="Button" parent="UI/Panel/VBox/EventRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Resource Shortage"
+text = "短缺"
 
 [node name="TheftEventButton" type="Button" parent="UI/Panel/VBox/EventRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Player Stole"
-
-[node name="AdvanceTickButton" type="Button" parent="UI/Panel/VBox"]
-layout_mode = 2
-text = "推进时间 / T"
+text = "偷窃"
 
 [node name="ThoughtPanel" type="PanelContainer" parent="UI"]
-offset_left = 16.0
-offset_top = 396.0
-offset_right = 584.0
-offset_bottom = 704.0
+offset_left = 1360.0
+offset_top = 408.0
+offset_right = 1904.0
+offset_bottom = 576.0
+theme_override_styles/panel = SubResource("1")
 
 [node name="ThoughtLog" type="RichTextLabel" parent="UI/ThoughtPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 bbcode_enabled = true
-scroll_active = false
-text = "模型思考与规则裁决会显示在这里。"
+scroll_active = true
+text = "思考 / 规划器"
 
 [node name="TaskPanel" type="PanelContainer" parent="UI"]
-offset_left = 712.0
-offset_top = 16.0
-offset_right = 1264.0
-offset_bottom = 312.0
+offset_left = 1360.0
+offset_top = 592.0
+offset_right = 1904.0
+offset_bottom = 784.0
+theme_override_styles/panel = SubResource("1")
 
 [node name="TaskLog" type="RichTextLabel" parent="UI/TaskPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 bbcode_enabled = true
-scroll_active = false
+scroll_active = true
 text = "正在加载 NPC 任务..."
 
 [node name="EventPanel" type="PanelContainer" parent="UI"]
-offset_left = 712.0
-offset_top = 328.0
-offset_right = 1264.0
-offset_bottom = 500.0
+offset_left = 1360.0
+offset_top = 800.0
+offset_right = 1904.0
+offset_bottom = 926.0
+theme_override_styles/panel = SubResource("1")
 
 [node name="EventLog" type="RichTextLabel" parent="UI/EventPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 bbcode_enabled = true
-scroll_active = false
-text = "世界事件、报告与验证结果会显示在这里。"
+scroll_active = true
+text = "事件、报告与验证结果显示在这里。"
 
 [node name="EventDetailPanel" type="PanelContainer" parent="UI"]
-offset_left = 712.0
-offset_top = 516.0
-offset_right = 1264.0
-offset_bottom = 704.0
+offset_left = 1360.0
+offset_top = 942.0
+offset_right = 1904.0
+offset_bottom = 1064.0
+theme_override_styles/panel = SubResource("1")
 
 [node name="EventDetailLog" type="RichTextLabel" parent="UI/EventDetailPanel"]
 unique_name_in_owner = true
 layout_mode = 2
 bbcode_enabled = true
-scroll_active = false
-text = "事件目录详情会显示在这里。"
+scroll_active = true
+text = "事件目录详情显示在这里。"
+
+[node name="AutoTickTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 1.0
+one_shot = true
 
 [connection signal="pressed" from="UI/Panel/VBox/ButtonRow/SubmitButton" to="." method="_on_submit_button_pressed"]
 [connection signal="pressed" from="UI/Panel/VBox/ButtonRow/SuspiciousEventButton" to="." method="_on_suspicious_event_button_pressed"]
 [connection signal="pressed" from="UI/Panel/VBox/ButtonRow/PlanExecuteButton" to="." method="_on_plan_execute_button_pressed"]
 [connection signal="pressed" from="UI/Panel/VBox/ButtonRow/ResetButton" to="." method="_on_reset_button_pressed"]
+[connection signal="pressed" from="UI/Panel/VBox/TickControlRow/AutoTickButton" to="." method="_on_auto_tick_button_pressed"]
 [connection signal="pressed" from="UI/Panel/VBox/EventRow/MonsterEventButton" to="." method="_on_monster_event_button_pressed"]
 [connection signal="pressed" from="UI/Panel/VBox/EventRow/ResourceEventButton" to="." method="_on_resource_event_button_pressed"]
 [connection signal="pressed" from="UI/Panel/VBox/EventRow/TheftEventButton" to="." method="_on_theft_event_button_pressed"]
-[connection signal="pressed" from="UI/Panel/VBox/AdvanceTickButton" to="." method="_on_advance_tick_button_pressed"]
+[connection signal="pressed" from="UI/Panel/VBox/TickControlRow/AdvanceTickButton" to="." method="_on_advance_tick_button_pressed"]

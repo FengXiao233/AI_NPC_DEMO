@@ -12,15 +12,20 @@ ACTION_TO_TASK_TYPE = {
     "idle": "idle",
     "rest": "rest",
     "move": "patrol",
+    "chat": "chat",
     "talk": "talk",
     "help": "help",
     "patrol": "patrol",
     "gather": "gather",
     "hunt": "hunt",
+    "eat": "eat",
     "flee": "flee",
     "trade": "trade",
+    "plant": "plant",
+    "forge": "forge",
+    "heal": "heal",
     "investigate": "investigate",
-    "warn": "talk",
+    "warn": "chat",
     "report": "report",
 }
 
@@ -38,35 +43,53 @@ def plan_next_action_for_npc(connection: sqlite3.Connection, npc_id: str) -> Act
     if agent_state is None:
         return None
 
-    thought = generate_thought(agent_state)
-    selected_action = select_candidate_action(thought)
+    plan_result = plan_action_for_state(agent_state)
+    commit_action_plan(connection, agent_state, plan_result)
+    connection.commit()
+    return plan_result
+
+
+def plan_action_for_state(agent_state: AgentState, thought: ThoughtResult | None = None) -> ActionPlanResult:
+    selected_thought = thought or generate_thought(agent_state)
+    selected_action = select_candidate_action(agent_state, selected_thought)
     if selected_action is None:
         return ActionPlanResult(
-            npc_id=npc_id,
+            npc_id=agent_state.npc_id,
             mode="none",
             selected_task=None,
             decision_reason="No executable candidate action was available.",
-            thought=thought,
+            thought=selected_thought,
         )
 
-    selected_task = action_to_queued_task(agent_state, thought, selected_action)
-    decision = decide_task_application(agent_state, thought, selected_task)
-    mode = apply_selected_task(connection, agent_state, decision, selected_task)
-    connection.commit()
-
+    selected_task = action_to_queued_task(agent_state, selected_thought, selected_action)
+    decision = decide_task_application(agent_state, selected_thought, selected_task)
+    mode = preview_selected_task_application(agent_state, decision, selected_task)
     return ActionPlanResult(
-        npc_id=npc_id,
+        npc_id=agent_state.npc_id,
         mode=mode,
         selected_task=selected_task,
         decision_reason=decision["reason"],
-        thought=thought,
+        thought=selected_thought,
     )
 
 
-def select_candidate_action(thought: ThoughtResult) -> CandidateAction | None:
+def commit_action_plan(
+    connection: sqlite3.Connection,
+    agent_state: AgentState,
+    plan_result: ActionPlanResult,
+) -> None:
+    if plan_result.selected_task is None or plan_result.mode in {"none", "unchanged"}:
+        return
+    apply_selected_task(connection, agent_state, plan_result.mode, plan_result.selected_task)
+
+
+def select_candidate_action(agent_state: AgentState, thought: ThoughtResult) -> CandidateAction | None:
     for candidate_action in thought.candidate_actions:
-        if candidate_action.action_type in ACTION_TO_TASK_TYPE:
-            return candidate_action
+        if candidate_action.action_type not in ACTION_TO_TASK_TYPE:
+            continue
+        if ACTION_TO_TASK_TYPE[candidate_action.action_type] == "talk" and not can_talk_to_target(agent_state, candidate_action.target_id):
+            continue
+        return candidate_action
     return None
 
 
@@ -93,12 +116,19 @@ def action_to_queued_task(
 def apply_selected_task(
     connection: sqlite3.Connection,
     agent_state: AgentState,
-    decision: dict[str, Any],
+    mode: str,
     selected_task: dict[str, Any],
 ) -> str:
+    if selected_task["task_type"] == "chat":
+        deliver_chat_message(connection, agent_state, selected_task)
+        return "messaged"
+    if selected_task["task_type"] == "talk":
+        deliver_talk_request(connection, agent_state, selected_task)
+        return "requested"
+
     task_queue = [task.model_dump(mode="json") for task in agent_state.task_queue]
 
-    if decision["mode"] == "interrupted":
+    if mode == "interrupted":
         paused_task = agent_state.current_task.model_dump(mode="json")
         if paused_task["task_type"] != "idle":
             task_queue.append(
@@ -117,7 +147,7 @@ def apply_selected_task(
         )
         return "interrupted"
 
-    if has_equivalent_task(task_queue, selected_task):
+    if mode == "unchanged" or has_equivalent_task(task_queue, selected_task):
         return "unchanged"
 
     task_queue.append(selected_task)
@@ -127,6 +157,23 @@ def apply_selected_task(
         current_task=agent_state.current_task.model_dump(mode="json"),
         task_queue=dedupe_task_queue(task_queue),
     )
+    return "queued"
+
+
+def preview_selected_task_application(
+    agent_state: AgentState,
+    decision: dict[str, Any],
+    selected_task: dict[str, Any],
+) -> str:
+    if selected_task["task_type"] == "chat":
+        return "messaged"
+    if selected_task["task_type"] == "talk":
+        return "requested"
+    if decision["mode"] == "interrupted":
+        return "interrupted"
+    task_queue = [task.model_dump(mode="json") for task in agent_state.task_queue]
+    if has_equivalent_task(task_queue, selected_task):
+        return "unchanged"
     return "queued"
 
 
@@ -205,6 +252,100 @@ def update_npc_tasks(
             npc_id,
         ),
     )
+
+
+def deliver_chat_message(
+    connection: sqlite3.Connection,
+    agent_state: AgentState,
+    selected_task: dict[str, Any],
+) -> None:
+    target_id = selected_task.get("target_id")
+    if target_id is None:
+        return
+    append_target_message(
+        connection,
+        target_id,
+        {
+            "message_id": f"msg_{target_id}_{agent_state.runtime_flags.last_thought_tick}_chat_{agent_state.npc_id}",
+            "message_type": "chat",
+            "from_id": agent_state.npc_id,
+            "priority": selected_task["priority"],
+            "created_at_tick": agent_state.runtime_flags.last_thought_tick,
+            "content": f"{agent_state.name} chatted briefly while continuing their current task.",
+            "topic_hint": None,
+            "credibility": None,
+        },
+    )
+
+
+def deliver_talk_request(
+    connection: sqlite3.Connection,
+    agent_state: AgentState,
+    selected_task: dict[str, Any],
+) -> None:
+    target_id = selected_task.get("target_id")
+    if target_id is None or not can_talk_to_target(agent_state, target_id, connection):
+        return
+    append_target_message(
+        connection,
+        target_id,
+        {
+            "message_id": f"msg_{target_id}_{agent_state.runtime_flags.last_thought_tick}_talk_request_{agent_state.npc_id}",
+            "message_type": "talk_request",
+            "from_id": agent_state.npc_id,
+            "priority": selected_task["priority"],
+            "created_at_tick": agent_state.runtime_flags.last_thought_tick,
+            "content": f"{agent_state.name} wants to start a focused talk.",
+            "topic_hint": None,
+            "credibility": None,
+        },
+    )
+
+
+def append_target_message(
+    connection: sqlite3.Connection,
+    target_id: str,
+    message: dict[str, Any],
+) -> None:
+    row = connection.execute(
+        "SELECT message_queue_json FROM npc_state WHERE npc_id = ?",
+        (target_id,),
+    ).fetchone()
+    if row is None:
+        return
+    messages = [
+        existing
+        for existing in json.loads(row[0])
+        if existing.get("message_id") != message["message_id"]
+    ]
+    messages.append(message)
+    messages = sorted(messages, key=lambda item: (item["priority"], item["created_at_tick"]), reverse=True)[:10]
+    connection.execute(
+        "UPDATE npc_state SET message_queue_json = ? WHERE npc_id = ?",
+        (dump_json(messages), target_id),
+    )
+
+
+def can_talk_to_target(
+    agent_state: AgentState,
+    target_id: str | None,
+    connection: sqlite3.Connection | None = None,
+) -> bool:
+    if target_id is None:
+        return False
+    for relationship in agent_state.relationships:
+        if relationship.target_id == target_id and not target_id.startswith("npc_"):
+            return True
+    if connection is None:
+        return True
+    row = connection.execute(
+        "SELECT location_id FROM npc_state WHERE npc_id = ?",
+        (target_id,),
+    ).fetchone()
+    if row is None:
+        return False
+    target_location = row[0]
+    return target_location == agent_state.location_id
 
 
 def dedupe_task_queue(task_queue: list[dict[str, Any]]) -> list[dict[str, Any]]:

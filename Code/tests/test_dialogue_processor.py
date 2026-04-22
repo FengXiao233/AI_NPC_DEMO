@@ -1,12 +1,13 @@
 import sqlite3
 
+from app.dialogue_history import load_dialogue_history
 from app.dialogue_interpreter import (
     LlmDialogueInterpreter,
     UtteranceInterpretation,
     configured_llm_interpreter,
 )
 from app.dialogue_processor import PlayerUtteranceRequest, receive_player_utterance
-from app.state_repository import list_belief_records, list_event_records, load_agent_state
+from app.state_repository import list_belief_records, list_event_records, list_memory_records, load_agent_state
 from scripts.init_sqlite import DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR, initialize_connection
 
 
@@ -71,6 +72,53 @@ def test_player_utterance_creates_npc_belief_but_not_world_event() -> None:
     assert events == []
 
 
+def test_key_player_utterance_is_saved_as_memory() -> None:
+    with sqlite3.connect(":memory:") as connection:
+        initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+
+        result = receive_player_utterance(
+            connection,
+            "npc_merchant_001",
+            PlayerUtteranceRequest(
+                speaker_id="player_001",
+                content="There is a monster near the forest road.",
+                created_at_tick=212,
+                message_id="msg_merchant_key_dialogue",
+            ),
+        )
+        memories = list_memory_records(connection, "npc_merchant_001", include_expired=True)
+
+    key_memory = next(
+        memory for memory in memories if memory.memory_id == "mem_npc_merchant_001_msg_merchant_key_dialogue_dialogue"
+    )
+    assert result is not None
+    assert key_memory.importance >= 55
+    assert "There is a monster near the forest road." in key_memory.summary
+    assert "player_001" in key_memory.related_ids
+    assert "monster_threat" in key_memory.related_ids
+
+
+def test_casual_player_utterance_is_only_dialogue_history_not_memory() -> None:
+    with sqlite3.connect(":memory:") as connection:
+        initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+
+        receive_player_utterance(
+            connection,
+            "npc_merchant_001",
+            PlayerUtteranceRequest(
+                speaker_id="player_001",
+                content="Hello.",
+                created_at_tick=213,
+                message_id="msg_merchant_casual_dialogue",
+            ),
+        )
+        history = load_dialogue_history(connection, "npc_merchant_001", "player_001")
+        memories = list_memory_records(connection, "npc_merchant_001", include_expired=True)
+
+    assert any(turn.content == "Hello." for turn in history.recent_turns)
+    assert not any(memory.memory_id == "mem_npc_merchant_001_msg_merchant_casual_dialogue_dialogue" for memory in memories)
+
+
 def test_merchant_forms_suspicious_arrival_belief_without_direct_forwarding() -> None:
     with sqlite3.connect(":memory:") as connection:
         initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
@@ -103,6 +151,76 @@ def test_merchant_forms_suspicious_arrival_belief_without_direct_forwarding() ->
     assert merchant_beliefs[0].truth_status == "unverified"
     assert guard_beliefs == []
     assert events == []
+
+
+def test_dialogue_completes_matching_talk_task() -> None:
+    with sqlite3.connect(":memory:") as connection:
+        initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+        connection.execute(
+            """
+            UPDATE npc_state
+            SET current_task_json = ?,
+                task_queue_json = ?
+            WHERE npc_id = ?
+            """,
+            (
+                '{"task_type":"talk","target_id":"player_001","location_id":"market","priority":100,"interruptible":true}',
+                "[]",
+                "npc_merchant_001",
+            ),
+        )
+        connection.commit()
+
+        receive_player_utterance(
+            connection,
+            "npc_merchant_001",
+            PlayerUtteranceRequest(
+                speaker_id="player_001",
+                content="Hello, how is business?",
+                created_at_tick=213,
+                message_id="msg_merchant_talk_completion",
+            ),
+        )
+        merchant_state = load_agent_state(connection, "npc_merchant_001")
+
+    assert merchant_state is not None
+    assert merchant_state.current_task.task_type == "idle"
+    assert merchant_state.current_task.target_id is None
+
+
+def test_dialogue_promotes_next_task_after_matching_talk_task() -> None:
+    with sqlite3.connect(":memory:") as connection:
+        initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+        connection.execute(
+            """
+            UPDATE npc_state
+            SET current_task_json = ?,
+                task_queue_json = ?
+            WHERE npc_id = ?
+            """,
+            (
+                '{"task_type":"talk","target_id":"player_001","location_id":"market","priority":100,"interruptible":true}',
+                '[{"task_id":"task_trade_after_talk","task_type":"trade","target_id":null,"location_id":"market","priority":55,"interruptible":true,"source":"thought","status":"queued"}]',
+                "npc_merchant_001",
+            ),
+        )
+        connection.commit()
+
+        receive_player_utterance(
+            connection,
+            "npc_merchant_001",
+            PlayerUtteranceRequest(
+                speaker_id="player_001",
+                content="Thanks for talking.",
+                created_at_tick=214,
+                message_id="msg_merchant_talk_promotes_next",
+            ),
+        )
+        merchant_state = load_agent_state(connection, "npc_merchant_001")
+
+    assert merchant_state is not None
+    assert merchant_state.current_task.task_type == "trade"
+    assert merchant_state.task_queue == []
 
 
 def test_receive_player_utterance_returns_none_for_missing_npc() -> None:
@@ -205,6 +323,111 @@ def test_llm_interpreter_can_decline_belief_even_when_keyword_exists() -> None:
     assert events == []
 
 
+def test_receive_player_utterance_stores_dialogue_history_by_npc() -> None:
+    scripted_reply = UtteranceInterpretation(
+        utterance_type="question",
+        should_create_belief=False,
+        topic_hint=None,
+        claim="",
+        confidence_delta=0,
+        urgency=15,
+        speaker_intent="chat",
+        target_id=None,
+        location_id=None,
+        recommended_action=None,
+        reply_text="I remember what you asked earlier.",
+        reason="Continuous dialogue test.",
+        source="llm",
+    )
+
+    with sqlite3.connect(":memory:") as connection:
+        initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+
+        receive_player_utterance(
+            connection,
+            "npc_guard_001",
+            PlayerUtteranceRequest(
+                speaker_id="player_001",
+                content="How is the north road today?",
+                created_at_tick=300,
+                message_id="msg_guard_dialogue_1",
+            ),
+            interpreter=StaticInterpreter(scripted_reply),
+        )
+        receive_player_utterance(
+            connection,
+            "npc_guard_001",
+            PlayerUtteranceRequest(
+                speaker_id="player_001",
+                content="Did you check it already?",
+                created_at_tick=301,
+                message_id="msg_guard_dialogue_2",
+            ),
+            interpreter=StaticInterpreter(scripted_reply),
+        )
+        receive_player_utterance(
+            connection,
+            "npc_merchant_001",
+            PlayerUtteranceRequest(
+                speaker_id="player_001",
+                content="How are sales today?",
+                created_at_tick=302,
+                message_id="msg_merchant_dialogue_1",
+            ),
+            interpreter=StaticInterpreter(scripted_reply),
+        )
+
+        guard_history = load_dialogue_history(connection, "npc_guard_001", "player_001")
+        merchant_history = load_dialogue_history(connection, "npc_merchant_001", "player_001")
+
+    assert guard_history.total_turn_count == 4
+    assert [turn.role for turn in guard_history.recent_turns] == ["player", "npc", "player", "npc"]
+    assert merchant_history.total_turn_count == 2
+    assert merchant_history.recent_turns[0].content == "How are sales today?"
+    assert merchant_history.recent_turns[1].speaker_label == "Mira"
+
+
+def test_dialogue_history_summarizes_archived_turns_after_multiple_rounds() -> None:
+    scripted_reply = UtteranceInterpretation(
+        utterance_type="question",
+        should_create_belief=False,
+        topic_hint=None,
+        claim="",
+        confidence_delta=0,
+        urgency=10,
+        speaker_intent="chat",
+        target_id=None,
+        location_id=None,
+        recommended_action=None,
+        reply_text="We already discussed that.",
+        reason="Summary test.",
+        source="llm",
+    )
+
+    with sqlite3.connect(":memory:") as connection:
+        initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+
+        for offset in range(4):
+            receive_player_utterance(
+                connection,
+                "npc_guard_001",
+                PlayerUtteranceRequest(
+                    speaker_id="player_001",
+                    content=f"Question number {offset + 1} about the village gate.",
+                    created_at_tick=320 + offset,
+                    message_id=f"msg_guard_summary_{offset + 1}",
+                ),
+                interpreter=StaticInterpreter(scripted_reply),
+            )
+
+        history = load_dialogue_history(connection, "npc_guard_001", "player_001")
+
+    assert history.total_turn_count == 8
+    assert len(history.recent_turns) == 6
+    assert history.summary != ""
+    assert "Question number 1" in history.summary
+
+
 def test_llm_interpreter_builds_responses_api_payload() -> None:
     with sqlite3.connect(":memory:") as connection:
         initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
@@ -222,6 +445,19 @@ def test_llm_interpreter_builds_responses_api_payload() -> None:
         speaker_id="player_001",
         content="A suspicious stranger arrived at the village gate.",
         created_at_tick=230,
+        dialogue_context={
+            "summary": "Earlier dialogue covered a suspicious peddler near the north road.",
+            "recent_turns": [
+                {
+                    "speaker_id": "player_001",
+                    "speaker_label": "Player",
+                    "role": "player",
+                    "content": "Did you question the peddler?",
+                    "created_at_tick": 228,
+                }
+            ],
+            "total_turn_count": 3,
+        },
     )
 
     assert payload["model"] == "doubao-seed-2-0-mini-260215"
@@ -230,6 +466,7 @@ def test_llm_interpreter_builds_responses_api_payload() -> None:
     assert payload["input"][1]["role"] == "user"
     assert payload["input"][1]["content"][0]["type"] == "input_text"
     assert "A suspicious stranger arrived at the village gate." in payload["input"][1]["content"][0]["text"]
+    assert "dialogue_context" in payload["input"][1]["content"][0]["text"]
     assert "reply_text" in payload["input"][1]["content"][0]["text"]
     assert payload["max_output_tokens"] == 800
     assert payload["thinking"] == {"type": "disabled"}
@@ -268,6 +505,35 @@ def test_llm_interpreter_extracts_responses_api_text() -> None:
     assert interpreter._extract_response_text(response_payload) == '{"should_create_belief": true}'
 
 
+def test_llm_interpreter_accepts_schema_wrapped_model_output() -> None:
+    interpreter = LlmDialogueInterpreter(
+        api_key="test-key",
+        model="test-model",
+        api_style="responses",
+    )
+    parsed = interpreter._normalize_model_output(
+        {
+            "schema": {
+                "utterance_type": "greeting",
+                "should_create_belief": False,
+                "topic_hint": None,
+                "claim": "",
+                "confidence_delta": 0,
+                "urgency": 20,
+                "speaker_intent": "casual greeting",
+                "target_id": None,
+                "location_id": "village_gate",
+                "recommended_action": "talk",
+                "reply_text": "I am watching the gate.",
+                "reason": "The player asked a casual question.",
+            }
+        }
+    )
+
+    assert parsed["should_create_belief"] is False
+    assert parsed["reply_text"] == "I am watching the gate."
+
+
 def test_configured_llm_interpreter_uses_ark_responses_api_by_default(monkeypatch) -> None:
     monkeypatch.setenv("ENABLE_LLM_DIALOGUE", "1")
     monkeypatch.setenv("ARK_API_KEY", "ark-test-key")
@@ -277,6 +543,7 @@ def test_configured_llm_interpreter_uses_ark_responses_api_by_default(monkeypatc
     monkeypatch.delenv("LLM_CHAT_COMPLETIONS_URL", raising=False)
     monkeypatch.delenv("LLM_RESPONSES_URL", raising=False)
     monkeypatch.delenv("LLM_API_STYLE", raising=False)
+    monkeypatch.delenv("LLM_TIMEOUT_SECONDS", raising=False)
 
     interpreter = configured_llm_interpreter()
 

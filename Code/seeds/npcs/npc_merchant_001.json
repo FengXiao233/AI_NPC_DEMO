@@ -5,6 +5,7 @@
   "location_id": "market",
   "base_attributes": {
     "strength": 3,
+    "endurance": 4,
     "technique": 4,
     "logic": 7,
     "perception": 6,
@@ -15,11 +16,19 @@
     "kindness": 6,
     "prudence": 8,
     "greed": 5,
-    "curiosity": 5
+    "curiosity": 5,
+    "empathy": 6,
+    "discipline": 6,
+    "conformity": 5,
+    "ambition": 7,
+    "loyalty": 4,
+    "aggression": 2,
+    "patience": 7
   },
   "needs": {
     "energy": 76,
     "hunger": 30,
+    "health": 90,
     "safety": 70,
     "social": 55
   },
@@ -89,7 +98,9 @@
   },
   "runtime_flags": {
     "is_critical_npc": true,
+    "priority_tier": "highest",
     "thought_cooldown_ticks": 20,
-    "last_thought_tick": 100
+    "last_thought_tick": 100,
+    "last_plan_tick": 100
   }
 }

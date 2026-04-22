@@ -17,9 +17,9 @@ def test_apply_passive_state_drift_changes_needs() -> None:
 
     stored_needs = json.loads(needs_json)
     assert needs == stored_needs
-    assert stored_needs["hunger"] == 37
+    assert stored_needs["hunger"] == 38
     assert stored_needs["energy"] == 69
-    assert stored_needs["social"] == 21
+    assert stored_needs["social"] == 22
 
 
 def test_apply_passive_state_drift_clamps_needs() -> None:

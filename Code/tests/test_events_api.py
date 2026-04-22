@@ -2,8 +2,21 @@ import sqlite3
 
 from fastapi.testclient import TestClient
 
+import app.main as main_module
 from app.main import app
+from app.simulation_engine import SimulationBusyError
 from scripts.init_sqlite import DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR, initialize_connection
+
+
+SEEDED_NPC_IDS = [
+    "npc_blacksmith_001",
+    "npc_farmer_001",
+    "npc_guard_001",
+    "npc_hunter_001",
+    "npc_merchant_001",
+    "npc_physician_001",
+    "npc_village_chief_001",
+]
 
 
 def test_events_endpoint_accepts_world_event() -> None:
@@ -28,7 +41,7 @@ def test_events_endpoint_accepts_world_event() -> None:
             )
 
         assert response.status_code == 200
-        assert response.json()["recipient_npc_ids"] == ["npc_guard_001", "npc_hunter_001", "npc_merchant_001"]
+        assert response.json()["recipient_npc_ids"] == SEEDED_NPC_IDS
     finally:
         del app.state.db_connection
         connection.close()
@@ -79,6 +92,8 @@ def test_event_catalog_endpoint_returns_metadata_for_godot_visualization() -> No
         and role_response["task_type"] == "patrol"
         for role_response in monster_entry["default_role_responses"]
     )
+    traveler_entry = next(item for item in response.json() if item["event_type"] == "traveler_arrived")
+    assert traveler_entry["category"] == "visitor_activity"
 
 
 def test_player_utterance_endpoint_queues_claim_for_npc() -> None:
@@ -107,6 +122,39 @@ def test_player_utterance_endpoint_queues_claim_for_npc() -> None:
         connection.close()
 
 
+def test_dialogue_history_endpoint_returns_recent_turns_and_summary() -> None:
+    connection = sqlite3.connect(":memory:", check_same_thread=False)
+    initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+
+    try:
+        app.state.db_connection = connection
+        with TestClient(app) as client:
+            for index in range(4):
+                response = client.post(
+                    "/npcs/npc_guard_001/utterances",
+                    json={
+                        "speaker_id": "player_001",
+                        "content": f"Tell me update number {index + 1} about the gate.",
+                        "created_at_tick": 230 + index,
+                        "message_id": f"msg_api_dialogue_{index + 1}",
+                    },
+                )
+                assert response.status_code == 200
+
+            history_response = client.get("/npcs/npc_guard_001/dialogue-history?speaker_id=player_001")
+
+        assert history_response.status_code == 200
+        payload = history_response.json()
+        assert payload["npc_id"] == "npc_guard_001"
+        assert payload["speaker_id"] == "player_001"
+        assert payload["total_turn_count"] == 8
+        assert len(payload["recent_turns"]) == 6
+        assert payload["summary"] != ""
+    finally:
+        del app.state.db_connection
+        connection.close()
+
+
 def test_npc_state_endpoints_return_sqlite_state() -> None:
     connection = sqlite3.connect(":memory:", check_same_thread=False)
     initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
@@ -119,11 +167,7 @@ def test_npc_state_endpoints_return_sqlite_state() -> None:
             missing_response = client.get("/npcs/missing_npc")
 
         assert list_response.status_code == 200
-        assert [item["npc_id"] for item in list_response.json()] == [
-            "npc_guard_001",
-            "npc_hunter_001",
-            "npc_merchant_001",
-        ]
+        assert [item["npc_id"] for item in list_response.json()] == SEEDED_NPC_IDS
         assert state_response.status_code == 200
         assert state_response.json()["npc_id"] == "npc_hunter_001"
         assert missing_response.status_code == 404
@@ -424,6 +468,53 @@ def test_simulation_tick_endpoint_surfaces_belief_verification() -> None:
         connection.close()
 
 
+def test_simulation_tick_endpoint_can_return_profile() -> None:
+    connection = sqlite3.connect(":memory:", check_same_thread=False)
+    initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+
+    try:
+        app.state.db_connection = connection
+        with TestClient(app) as client:
+            response = client.post(
+                "/simulation/tick",
+                json={
+                    "current_tick": 120,
+                    "npc_ids": ["npc_hunter_001"],
+                    "include_profile": True,
+                },
+            )
+
+        assert response.status_code == 200
+        assert response.json()["profile"]["execution_worker_count"] >= 1
+        assert response.json()["profile"]["npc_profiles"][0]["npc_id"] == "npc_hunter_001"
+    finally:
+        del app.state.db_connection
+        connection.close()
+
+
+def test_simulation_tick_endpoint_returns_busy_when_engine_rejects_reentry(monkeypatch) -> None:
+    class BusyEngine:
+        runtime_config = type("RuntimeConfig", (), {"tick_reentry_mode": "reject"})()
+
+        def run_tick(self, connection, request):
+            raise SimulationBusyError("simulation tick already running")
+
+    monkeypatch.setattr(main_module, "get_default_simulation_engine", lambda: BusyEngine())
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/simulation/tick",
+            json={
+                "current_tick": 120,
+                "npc_ids": ["npc_hunter_001"],
+            },
+        )
+
+    assert response.status_code == 409
+    assert response.json()["detail"]["status"] == "busy"
+    assert response.json()["detail"]["current_mode"] == "reject"
+
+
 def test_debug_reset_endpoint_restores_seed_state_and_clears_events() -> None:
     connection = sqlite3.connect(":memory:", check_same_thread=False)
     initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
@@ -456,14 +547,106 @@ def test_debug_reset_endpoint_restores_seed_state_and_clears_events() -> None:
             event_response = client.get("/events")
 
         assert reset_response.status_code == 200
-        assert reset_response.json() == {"status": "reset", "seeded_npc_count": 3}
+        assert reset_response.json() == {"status": "reset", "seeded_npc_count": 7}
         assert npc_response.json()["needs"] == {
             "energy": 76,
             "hunger": 30,
+            "health": 90,
             "safety": 70,
             "social": 55,
         }
         assert event_response.json() == []
+    finally:
+        del app.state.db_connection
+        connection.close()
+
+
+def test_world_endpoints_expose_seeded_resources_and_spawned_entities() -> None:
+    connection = sqlite3.connect(":memory:", check_same_thread=False)
+    initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+
+    try:
+        app.state.db_connection = connection
+        with TestClient(app) as client:
+            resource_response = client.get("/world/resources?location_id=forest_edge")
+            ingest_response = client.post(
+                "/events",
+                json={
+                    "event_id": "evt_api_visible_monster",
+                    "event_type": "monster_appeared",
+                    "actor_id": "monster_api_wolf",
+                    "target_id": None,
+                    "location_id": "village_gate",
+                    "payload": {"monster_kind": "wolf", "monster_id": "monster_api_wolf", "count": 1},
+                    "importance": 70,
+                    "created_at_tick": 180,
+                },
+            )
+            entity_response = client.get("/world/entities?location_id=village_gate")
+
+        assert resource_response.status_code == 200
+        assert {item["resource_type"] for item in resource_response.json()} == {"berries", "herbs"}
+        assert ingest_response.status_code == 200
+        assert ingest_response.json()["spawned_entity_ids"] == ["monster_api_wolf"]
+        assert entity_response.status_code == 200
+        assert entity_response.json()[0]["entity_id"] == "monster_api_wolf"
+    finally:
+        del app.state.db_connection
+        connection.close()
+
+
+def test_village_economy_endpoints_expose_orders_and_warehouse_transactions() -> None:
+    connection = sqlite3.connect(":memory:", check_same_thread=False)
+    initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+
+    try:
+        app.state.db_connection = connection
+        with TestClient(app) as client:
+            execute_response = client.post("/npcs/npc_farmer_001/execute-task")
+            order_response = client.get("/village/production-orders")
+            transaction_response = client.get("/village/warehouse/transactions")
+
+        assert execute_response.status_code == 200
+        assert order_response.status_code == 200
+        assert transaction_response.status_code == 200
+        assert order_response.json()[0]["order_type"] == "plant"
+        assert order_response.json()[0]["status"] == "pending"
+        assert transaction_response.json()[0]["reason"] == "plant_started"
+        assert transaction_response.json()[0]["quantity_delta"] == -1
+    finally:
+        del app.state.db_connection
+        connection.close()
+
+
+def test_inventory_and_world_tick_endpoints_show_materialized_world_updates() -> None:
+    connection = sqlite3.connect(":memory:", check_same_thread=False)
+    initialize_connection(connection, DEFAULT_SCHEMA_PATH, DEFAULT_SEED_DIR)
+
+    try:
+        app.state.db_connection = connection
+        with TestClient(app) as client:
+            tick_response = client.post(
+                "/simulation/tick",
+                json={
+                    "current_tick": 180,
+                    "npc_ids": ["npc_guard_001", "npc_hunter_001", "npc_merchant_001"],
+                    "enable_world_updates": True,
+                },
+            )
+            inventory_response = client.get("/npcs/npc_hunter_001/inventory")
+            entity_response = client.get("/world/entities")
+
+        assert tick_response.status_code == 200
+        payload = tick_response.json()
+        assert payload["world_update"]["generated_event_ids"] == [
+            "evt_random_monster_180",
+            "evt_random_traveler_180",
+        ]
+        assert inventory_response.status_code == 200
+        assert len(inventory_response.json()) >= 2
+        assert any(item["execution_result"] is not None for item in payload["npc_results"])
+        assert entity_response.status_code == 200
+        assert any(item["entity_type"] in {"monster", "traveler"} for item in entity_response.json())
     finally:
         del app.state.db_connection
         connection.close()

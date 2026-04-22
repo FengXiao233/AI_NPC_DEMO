@@ -134,8 +134,10 @@ source: event
 玩家话语仍然只进入：
 
 ```text
-player_utterance -> credibility -> npc_belief -> thought/action
+player_utterance -> DialogueInterpreter/LLM -> credibility -> npc_belief -> thought/action
 ```
+
+玩家话语接口可以返回 `npc_reply` 供前端展示连续对话，也可以在可信度足够时生成目标 NPC 自己的 `npc_belief`。无论由规则还是模型解释，都不能直接创建 `world_event`。
 
 如果商人听到“村口有可疑陌生人”，最终稿中合理链路应是：
 

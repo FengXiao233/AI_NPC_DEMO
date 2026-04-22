@@ -1,0 +1,88 @@
+{
+  "npc_id": "npc_physician_001",
+  "name": "Sena",
+  "role": "physician",
+  "location_id": "village_square",
+  "base_attributes": {
+    "strength": 3,
+    "endurance": 5,
+    "technique": 6,
+    "logic": 7,
+    "perception": 8,
+    "influence": 6
+  },
+  "personality": {
+    "bravery": 4,
+    "kindness": 8,
+    "prudence": 8,
+    "greed": 1,
+    "curiosity": 6,
+    "empathy": 9,
+    "discipline": 7,
+    "conformity": 5,
+    "ambition": 3,
+    "loyalty": 7,
+    "aggression": 1,
+    "patience": 7
+  },
+  "needs": {
+    "energy": 68,
+    "hunger": 44,
+    "health": 96,
+    "safety": 64,
+    "social": 48
+  },
+  "relationships": [
+    {
+      "target_id": "npc_guard_001",
+      "favor": 8,
+      "trust": 12,
+      "hostility": 0
+    },
+    {
+      "target_id": "npc_hunter_001",
+      "favor": 10,
+      "trust": 12,
+      "hostility": 0
+    },
+    {
+      "target_id": "npc_village_chief_001",
+      "favor": 7,
+      "trust": 13,
+      "hostility": 0
+    }
+  ],
+  "current_task": {
+    "task_type": "help",
+    "target_id": null,
+    "location_id": "village_square",
+    "priority": 42,
+    "interruptible": true
+  },
+  "task_queue": [],
+  "message_queue": [],
+  "memory_summary": [
+    {
+      "memory_id": "mem_physician_001",
+      "summary": "The herb shelf is thin, but enough remains for emergency treatment.",
+      "importance": 58,
+      "related_ids": [
+        "village_warehouse",
+        "herbs"
+      ],
+      "created_at_tick": 98
+    }
+  ],
+  "learning_bias": {
+    "risk_preference_delta": -15,
+    "cooperation_bias_delta": 20,
+    "combat_confidence_delta": -15
+  },
+  "runtime_flags": {
+    "is_critical_npc": true,
+    "priority_tier": "high",
+    "thought_cooldown_ticks": 20,
+    "last_thought_tick": 0,
+    "last_plan_tick": 0
+  }
+}
