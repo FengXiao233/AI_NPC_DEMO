@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Godot generated cache
+Code/godot/.godot/
+Code/godot/*.log
+
+# Unity generated cache
+Code/unity/Library/
+Code/unity/Temp/
+Code/unity/Obj/
+Code/unity/Build/
+Code/unity/Builds/
+Code/unity/Logs/
+Code/unity/UserSettings/
+Code/unity/*.csproj
+Code/unity/*.sln
+Code/unity/*.user
+Code/unity/unity_import.log
